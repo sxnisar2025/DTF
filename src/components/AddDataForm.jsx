@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 
-export default function AddDataForm({ onClose, onSave }) {
+export default function AddDataForm({ onClose, onSave, editData }) {
+
   const systemDate = new Date().toLocaleDateString();
 
   const [form, setForm] = useState({
@@ -17,7 +18,26 @@ export default function AddDataForm({ onClose, onSave }) {
     file: null,
   });
 
-  /* 🔄 AUTO CALCULATIONS */
+  /* ✅ LOAD DATA WHEN EDITING */
+  useEffect(() => {
+    if (editData) {
+      setForm({
+        date: editData.date,
+        customer: editData.customer,
+        size: editData.size,
+        rate: editData.rate,
+        cost: editData.total,
+        cash: editData.cash,
+        transfer: editData.transfer,
+        deposit: editData.deposit,
+        balance: editData.balance,
+        amount: editData.amount,
+        file: editData.file || null,
+      });
+    }
+  }, [editData]);
+
+  /* ✅ AUTO CALCULATIONS */
   useEffect(() => {
     const size = Number(form.size || 0);
     const rate = Number(form.rate || 0);
@@ -37,19 +57,22 @@ export default function AddDataForm({ onClose, onSave }) {
     }));
   }, [form.size, form.rate, form.cash, form.transfer, form.deposit]);
 
+  /* ✅ INPUT HANDLER */
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
+
     setForm((prev) => ({
       ...prev,
       [name]: type === "file" ? files[0] : value,
     }));
   };
 
+  /* ✅ SUBMIT */
   const handleSubmit = (e) => {
     e.preventDefault();
 
     onSave({
-      id: Date.now(),
+      id: editData?.id || Date.now(),
       date: form.date,
       customer: form.customer,
       size: Number(form.size),
@@ -61,12 +84,6 @@ export default function AddDataForm({ onClose, onSave }) {
       balance: form.balance,
       amount: form.amount,
       file: form.file,
-      status:
-        form.balance <= 0
-          ? "Paid"
-          : form.amount > 0
-          ? "Partial"
-          : "Pending",
     });
 
     onClose();
@@ -78,9 +95,13 @@ export default function AddDataForm({ onClose, onSave }) {
         onSubmit={handleSubmit}
         className="bg-white p-6 rounded-xl w-full max-w-3xl"
       >
-        <h2 className="text-xl font-bold mb-6">Add Data</h2>
+
+        <h2 className="text-xl font-bold mb-6">
+          {editData ? "Edit Data" : "Add Data"}
+        </h2>
 
         <div className="grid grid-cols-2 gap-4">
+
           {/* DATE */}
           <div>
             <label className="text-sm font-medium">Date</label>
@@ -168,10 +189,26 @@ export default function AddDataForm({ onClose, onSave }) {
             />
           </div>
 
+          {/* DEPOSIT */}
+          <div>
+            <label className="text-sm font-medium">Deposit</label>
+            <input
+              name="deposit"
+              type="number"
+              value={form.deposit}
+              onChange={handleChange}
+              className="border p-2 rounded w-full"
+            />
+          </div>
+
           {/* FILE */}
           <div>
             <label className="text-sm font-medium">Attached File</label>
-            <input type="file" name="file" onChange={handleChange} />
+            <input
+              type="file"
+              name="file"
+              onChange={handleChange}
+            />
           </div>
 
           {/* BALANCE */}
@@ -184,19 +221,19 @@ export default function AddDataForm({ onClose, onSave }) {
             />
           </div>
 
-          {/* DEPOSIT */}
+          {/* AMOUNT */}
           <div>
-            <label className="text-sm font-medium">Deposit</label>
+            <label className="text-sm font-medium">Amount</label>
             <input
-              name="deposit"
-              type="number"
-              value={form.deposit}
-              onChange={handleChange}
-              className="border p-2 rounded w-full"
+              value={form.amount}
+              readOnly
+              className="border p-2 rounded bg-gray-100 w-full"
             />
           </div>
+
         </div>
 
+        {/* BUTTONS */}
         <div className="flex justify-end gap-3 mt-6">
           <button
             type="button"
@@ -205,10 +242,12 @@ export default function AddDataForm({ onClose, onSave }) {
           >
             Cancel
           </button>
+
           <button className="bg-black text-white px-4 py-2 rounded">
-            Save
+            {editData ? "Update" : "Save"}
           </button>
         </div>
+
       </form>
     </div>
   );

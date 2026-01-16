@@ -4,7 +4,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         {/* Logo */}
         <div className="text-xl font-bold">
-          MyApp
+          DTF vandors 
         </div>
 
         {/* Menu */}

@@ -1,22 +1,37 @@
-export default function Header() {
-  return (
-    <header className="bg-white shadow">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        {/* Logo */}
-        <div className="text-xl font-bold">
-          DTF vandors 
-        </div>
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
-        {/* Menu */}
-        <nav className="flex gap-6 text-sm font-medium">
-          <a href="/dashboard" className="hover:text-black text-gray-600">
-            Dashboard
-          </a>
-          <a href="/" className="hover:text-black text-gray-600">
-            Logout
-          </a>
-        </nav>
+export default function Header() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  return (
+    <div className="bg-black text-white p-4 flex justify-between">
+
+      <div className="font-bold text-lg">
+        DTF
       </div>
-    </header>
+
+      <div className="flex gap-6 items-center">
+
+        <Link to="/dashboard">Dashboard</Link>
+        <Link to="/record">Record</Link>
+        <Link to="/social">Social Data</Link>
+
+        <button
+          onClick={handleLogout}
+          className="bg-red-600 px-3 py-1 rounded"
+        >
+          Sign Out
+        </button>
+
+      </div>
+
+    </div>
   );
 }

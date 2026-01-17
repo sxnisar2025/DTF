@@ -1,7 +1,7 @@
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
-export default function Dashboard() {
+export default function SocialData() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
       <Header />
@@ -10,14 +10,19 @@ export default function Dashboard() {
         <div className="bg-white p-8 rounded-xl shadow">
 
           <h1 className="text-2xl font-bold mb-4">
-            Dashboard
+            Social Data
           </h1>
 
           <p className="text-gray-600">
-            Welcome to your dashboard overview.
+            Manage your social platform data here.
           </p>
 
-          {/* Later you can add cards, charts, stats here */}
+          {/* Example placeholders */}
+          <ul className="mt-4 space-y-2">
+            <li>📊 Facebook Stats</li>
+            <li>📈 Instagram Engagement</li>
+            <li>🐦 Twitter Analytics</li>
+          </ul>
 
         </div>
       </main>

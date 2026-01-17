@@ -2,9 +2,11 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Record from "./pages/Record";
+import OrderOnline from "./pages/OrderOnline";
 import SocialData from "./pages/SocialData";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
+
 
 export default function App() {
   return (
@@ -37,6 +39,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/order-online" element={<OrderOnline />} />
 
           <Route
             path="/social"

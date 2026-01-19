@@ -3,7 +3,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Record from "./pages/Record";
 import OrderOnline from "./pages/OrderOnline";
-import SocialData from "./pages/SocialData";
+import Stock from "./pages/Stock";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 
@@ -42,10 +42,10 @@ export default function App() {
           <Route path="/order-online" element={<OrderOnline />} />
 
           <Route
-            path="/social"
+            path="/stock"
             element={
               <ProtectedRoute>
-                <SocialData />
+                <Stock />
               </ProtectedRoute>
             }
           />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import AddDataForm from "../components/AddDataForm";
@@ -19,6 +19,12 @@ export default function OrderOnline() {
   const [monthFilter, setMonthFilter] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+
+  /* ================= LOAD DATA ON MOUNT ================= */
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("onlineOrders")) || [];
+    setRows(stored);
+  }, []);
 
   /* ================= FILTER LOGIC ================= */
   const filteredRows = rows.filter((row) => {
@@ -103,19 +109,23 @@ export default function OrderOnline() {
   /* ================= DELETE ================= */
   const deleteRow = (index) => {
     if (!window.confirm("Are you sure you want to delete this online order?")) return;
-    setRows(rows.filter((_, i) => i !== index));
+    const updatedRows = rows.filter((_, i) => i !== index);
+    setRows(updatedRows);
+    localStorage.setItem("onlineOrders", JSON.stringify(updatedRows));
   };
 
   /* ================= SAVE ================= */
   const saveData = (data) => {
+    let updatedRows;
     if (editRow !== null) {
-      const updated = [...rows];
-      updated[editRow] = data;
-      setRows(updated);
+      updatedRows = [...rows];
+      updatedRows[editRow] = data;
       setEditRow(null);
     } else {
-      setRows([...rows, data]);
+      updatedRows = [...rows, data];
     }
+    setRows(updatedRows);
+    localStorage.setItem("onlineOrders", JSON.stringify(updatedRows));
     setShowForm(false);
   };
 
@@ -225,7 +235,7 @@ export default function OrderOnline() {
 
       {showForm && (
         <AddDataForm
-          showOnlineFields={true}
+          showOnlineFields={true}  // <-- show phone & location fields
           editData={editRow !== null ? rows[editRow] : null}
           onClose={() => { setShowForm(false); setEditRow(null); }}
           onSave={saveData}

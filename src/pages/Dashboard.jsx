@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
@@ -11,32 +11,32 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  CartesianGrid
 } from "recharts";
 
 export default function Dashboard() {
 
   const [type, setType] = useState("record");
-  const [data, setData] = useState([]);
 
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [month, setMonth] = useState("");
 
-  /* ================= LOAD DATA ================= */
+  // ================= LOAD DATA =================
 
-  useEffect(() => {
+  const data = useMemo(() => {
 
     const stored =
       type === "record"
         ? JSON.parse(localStorage.getItem("records")) || []
         : JSON.parse(localStorage.getItem("onlineOrders")) || [];
 
-    setData(stored);
+    return stored;
 
   }, [type]);
 
-  /* ================= FILTER DATA (MEMOIZED) ================= */
+  // ================= FILTER DATA =================
 
   const filteredData = useMemo(() => {
 
@@ -54,31 +54,34 @@ export default function Dashboard() {
       }
 
       return dateMatch && monthMatch;
-
     });
 
   }, [data, fromDate, toDate, month]);
 
-  /* ================= TOTALS (MEMOIZED) ================= */
+  // ================= TOTAL CALCULATION =================
 
   const totals = useMemo(() => {
 
     return filteredData.reduce(
       (acc, item) => {
 
-        acc.size += Number(item.size || 0);
-        acc.cash += Number(item.cash || 0);
-        acc.transfer += Number(item.transfer || 0);
-        acc.balance += Number(item.balance || 0);
-        acc.deposit += Number(item.deposit || 0);
-        acc.amount += Number(item.amount || 0);
-
-        const cost = Number(item.total || 0);
+        const size = Number(item.size || 0);
+        const cash = Number(item.cash || 0);
+        const transfer = Number(item.transfer || 0);
+        const balance = Number(item.balance || 0);
+        const deposit = Number(item.deposit || 0);
         const amount = Number(item.amount || 0);
+        const cost = Number(item.total || 0);
+
+        acc.size += size;
+        acc.cash += cash;
+        acc.transfer += transfer;
+        acc.balance += balance;
+        acc.deposit += deposit;
+        acc.amount += amount;
         acc.profit += amount - cost;
 
         return acc;
-
       },
       {
         size: 0,
@@ -93,20 +96,20 @@ export default function Dashboard() {
 
   }, [filteredData]);
 
-  /* ================= GRAPH DATA ================= */
+  // ================= CHART DATA =================
 
-  const barData = useMemo(() => ([
+  const barData = useMemo(() => [
     { name: "Cash", value: totals.cash },
     { name: "Transfer", value: totals.transfer },
     { name: "Balance", value: totals.balance },
     { name: "Deposit", value: totals.deposit }
-  ]), [totals]);
+  ], [totals]);
 
-  const pieData = useMemo(() => ([
+  const pieData = useMemo(() => [
     { name: "Cash", value: totals.cash },
     { name: "Transfer", value: totals.transfer },
     { name: "Deposit", value: totals.deposit }
-  ]), [totals]);
+  ], [totals]);
 
   const printDashboard = () => window.print();
 
@@ -117,9 +120,9 @@ export default function Dashboard() {
 
       <main className="flex-1 p-6">
 
-        {/* FILTER HEADER */}
+        {/* ================= FILTER BAR ================= */}
 
-        <div className="bg-white p-5 rounded-xl shadow mb-5 grid md:grid-cols-5 gap-3">
+        <div className="bg-white p-5 rounded-xl shadow mb-5 grid md:grid-cols-5 gap-3 items-center">
 
           <h1 className="text-xl font-bold">Dashboard</h1>
 
@@ -161,7 +164,7 @@ export default function Dashboard() {
 
         </div>
 
-        {/* SUMMARY CARDS */}
+        {/* ================= SUMMARY CARDS ================= */}
 
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
 
@@ -175,9 +178,11 @@ export default function Dashboard() {
 
         </div>
 
-        {/* CHARTS */}
+        {/* ================= CHARTS ================= */}
 
         <div className="grid md:grid-cols-2 gap-6">
+
+          {/* BAR CHART */}
 
           <div className="bg-white p-5 rounded-xl shadow">
 
@@ -185,6 +190,7 @@ export default function Dashboard() {
 
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={barData}>
+                <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
@@ -194,12 +200,15 @@ export default function Dashboard() {
 
           </div>
 
+          {/* PIE CHART */}
+
           <div className="bg-white p-5 rounded-xl shadow">
 
             <h2 className="font-semibold mb-3">Income Distribution</h2>
 
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
+
                 <Pie
                   data={pieData}
                   dataKey="value"
@@ -211,13 +220,17 @@ export default function Dashboard() {
                     <Cell key={i} />
                   ))}
                 </Pie>
+
                 <Tooltip />
+
               </PieChart>
             </ResponsiveContainer>
 
           </div>
 
         </div>
+
+        {/* ================= PRINT ================= */}
 
         <div className="mt-6 flex justify-end">
           <button
@@ -236,7 +249,7 @@ export default function Dashboard() {
   );
 }
 
-/* ================= CARD COMPONENT ================= */
+// ================= CARD COMPONENT =================
 
 function Card({ title, value }) {
   return (

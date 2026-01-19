@@ -8,7 +8,6 @@ import jsPDF from "jspdf";
 import "jspdf-autotable";
 
 export default function OrderOnline() {
-
   const [rows, setRows] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editRow, setEditRow] = useState(null);
@@ -22,15 +21,14 @@ export default function OrderOnline() {
   const [toDate, setToDate] = useState("");
 
   /* ================= FILTER LOGIC ================= */
-
   const filteredRows = rows.filter((row) => {
-
     const searchMatch =
       row.customer?.toLowerCase().includes(search.toLowerCase()) ||
+      row.phone?.includes(search) ||
+      row.location?.toLowerCase().includes(search.toLowerCase()) ||
       row.date?.includes(search);
 
-    const customerMatch =
-      customerFilter === "" || row.customer === customerFilter;
+    const customerMatch = customerFilter === "" || row.customer === customerFilter;
 
     let paymentMatch = true;
     if (paymentFilter === "cash") paymentMatch = row.cash > 0;
@@ -45,34 +43,16 @@ export default function OrderOnline() {
 
     let dateRangeMatch = true;
     const rowDate = new Date(row.date);
+    if (fromDate) dateRangeMatch = rowDate >= new Date(fromDate);
+    if (toDate) dateRangeMatch = dateRangeMatch && rowDate <= new Date(toDate);
 
-    if (fromDate) {
-      dateRangeMatch = rowDate >= new Date(fromDate);
-    }
-
-    if (toDate) {
-      dateRangeMatch =
-        dateRangeMatch && rowDate <= new Date(toDate);
-    }
-
-    return (
-      searchMatch &&
-      customerMatch &&
-      paymentMatch &&
-      monthMatch &&
-      dateRangeMatch
-    );
+    return searchMatch && customerMatch && paymentMatch && monthMatch && dateRangeMatch;
   });
 
   /* ================= TOTAL ================= */
-
-  const totalAmount = filteredRows.reduce(
-    (sum, row) => sum + Number(row.amount || 0),
-    0
-  );
+  const totalAmount = filteredRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
 
   /* ================= EXPORT ================= */
-
   const exportExcel = () => {
     const ws = XLSX.utils.json_to_sheet(filteredRows);
     const wb = XLSX.utils.book_new();
@@ -91,17 +71,20 @@ export default function OrderOnline() {
   const exportPDF = () => {
     const doc = new jsPDF();
     doc.text("Online Orders Report", 14, 10);
-
     doc.autoTable({
       startY: 20,
       head: [[
-        "S No","Date","Customer","Size","Rate","Cost",
-        "Cash","Transfer","Balance","Deposit","Amount"
+        "S No", "Date", "Customer", "Phone", "Location",
+        "Size", "Rate", "Cost",
+        "Cash", "Transfer", "Balance",
+        "Deposit", "Amount"
       ]],
       body: filteredRows.map((r, i) => [
         i + 1,
         r.date,
         r.customer,
+        r.phone,
+        r.location,
         r.size,
         r.rate,
         r.total,
@@ -112,31 +95,19 @@ export default function OrderOnline() {
         r.amount
       ]),
     });
-
     doc.save("online_orders.pdf");
   };
 
-  const printTable = () => {
-    window.print();
-  };
+  const printTable = () => window.print();
 
   /* ================= DELETE ================= */
-
   const deleteRow = (index) => {
-
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this online order?"
-    );
-
-    if (!confirmDelete) return;
-
+    if (!window.confirm("Are you sure you want to delete this online order?")) return;
     setRows(rows.filter((_, i) => i !== index));
   };
 
   /* ================= SAVE ================= */
-
   const saveData = (data) => {
-
     if (editRow !== null) {
       const updated = [...rows];
       updated[editRow] = data;
@@ -145,124 +116,62 @@ export default function OrderOnline() {
     } else {
       setRows([...rows, data]);
     }
-
     setShowForm(false);
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
-
       <Header />
-
       <main className="flex-1 p-6">
-
         <div className="bg-white p-6 rounded-xl shadow">
 
           {/* HEADER */}
           <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
-
             <h1 className="text-2xl font-bold">Online Order</h1>
-
             <div className="flex flex-wrap gap-2">
-
-              <button onClick={exportExcel} className="border px-3 py-2 rounded">
-                Excel
-              </button>
-
-              <button onClick={exportCSV} className="border px-3 py-2 rounded">
-                CSV
-              </button>
-
-              <button onClick={exportPDF} className="border px-3 py-2 rounded">
-                PDF
-              </button>
-
-              <button onClick={printTable} className="border px-3 py-2 rounded">
-                Print
-              </button>
-
-              <button
-                onClick={() => setShowForm(true)}
-                className="bg-black text-white px-4 py-2 rounded"
-              >
-                + Add Order
-              </button>
-
+              <button onClick={exportExcel} className="border px-3 py-2 rounded">Excel</button>
+              <button onClick={exportCSV} className="border px-3 py-2 rounded">CSV</button>
+              <button onClick={exportPDF} className="border px-3 py-2 rounded">PDF</button>
+              <button onClick={printTable} className="border px-3 py-2 rounded">Print</button>
+              <button onClick={() => setShowForm(true)} className="bg-black text-white px-4 py-2 rounded">+ Add Order</button>
             </div>
-
           </div>
 
           {/* FILTER BAR */}
           <div className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4">
-
-            <input
-              placeholder="Search..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="border p-2 rounded"
-            />
-
-            <select
-              value={customerFilter}
-              onChange={(e) => setCustomerFilter(e.target.value)}
-              className="border p-2 rounded"
-            >
+            <input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="border p-2 rounded" />
+            <select value={customerFilter} onChange={(e) => setCustomerFilter(e.target.value)} className="border p-2 rounded">
               <option value="">All Customers</option>
               <option value="Zain">Zain</option>
               <option value="Noman">Noman</option>
               <option value="Irfan">Irfan</option>
             </select>
-
-            <select
-              value={paymentFilter}
-              onChange={(e) => setPaymentFilter(e.target.value)}
-              className="border p-2 rounded"
-            >
+            <select value={paymentFilter} onChange={(e) => setPaymentFilter(e.target.value)} className="border p-2 rounded">
               <option value="">All Payments</option>
               <option value="cash">Cash</option>
               <option value="transfer">Transfer</option>
               <option value="balance">Balance Due</option>
             </select>
-
-            <select
-              value={monthFilter}
-              onChange={(e) => setMonthFilter(e.target.value)}
-              className="border p-2 rounded"
-            >
+            <select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} className="border p-2 rounded">
               <option value="">All Months</option>
               {[...Array(12)].map((_, i) => (
-                <option key={i} value={i + 1}>
-                  {new Date(0, i).toLocaleString("default", { month: "long" })}
-                </option>
+                <option key={i} value={i + 1}>{new Date(0, i).toLocaleString("default", { month: "long" })}</option>
               ))}
             </select>
-
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="border p-2 rounded"
-            />
-
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="border p-2 rounded"
-            />
-
+            <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="border p-2 rounded" />
+            <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="border p-2 rounded" />
           </div>
 
           {/* TABLE */}
           <div className="overflow-x-auto">
-
             <table className="w-full border text-sm">
-
               <thead className="bg-gray-200">
                 <tr>
                   <th className="border p-2">#</th>
                   <th className="border p-2">Date</th>
                   <th className="border p-2">Customer</th>
+                  <th className="border p-2">Phone</th>
+                  <th className="border p-2">Location</th>
                   <th className="border p-2">Size</th>
                   <th className="border p-2">Rate</th>
                   <th className="border p-2">Cost</th>
@@ -274,23 +183,17 @@ export default function OrderOnline() {
                   <th className="border p-2">Action</th>
                 </tr>
               </thead>
-
               <tbody>
-
                 {filteredRows.length === 0 ? (
-                  <tr>
-                    <td colSpan="12" className="text-center p-6">
-                      No online orders found
-                    </td>
-                  </tr>
+                  <tr><td colSpan="14" className="text-center p-6">No online orders found</td></tr>
                 ) : (
-
                   filteredRows.map((r, i) => (
-                    <tr key={r.id}>
-
+                    <tr key={i}>
                       <td className="border p-2">{i + 1}</td>
                       <td className="border p-2">{r.date}</td>
                       <td className="border p-2">{r.customer}</td>
+                      <td className="border p-2">{r.phone}</td>
+                      <td className="border p-2">{r.location}</td>
                       <td className="border p-2">{r.size}</td>
                       <td className="border p-2">{r.rate}</td>
                       <td className="border p-2">{r.total}</td>
@@ -299,68 +202,35 @@ export default function OrderOnline() {
                       <td className="border p-2">{r.balance}</td>
                       <td className="border p-2">{r.deposit}</td>
                       <td className="border p-2 font-semibold">{r.amount}</td>
-
                       <td className="border p-2 flex gap-2">
-
-                        <button
-                          onClick={() => {
-                            setEditRow(i);
-                            setShowForm(true);
-                          }}
-                          className="text-blue-600"
-                        >
-                          Edit
-                        </button>
-
-                        <button
-                          onClick={() => deleteRow(i)}
-                          className="text-red-600"
-                        >
-                          Delete
-                        </button>
-
+                        <button onClick={() => { setEditRow(i); setShowForm(true); }} className="text-blue-600">Edit</button>
+                        <button onClick={() => deleteRow(i)} className="text-red-600">Delete</button>
                       </td>
-
                     </tr>
                   ))
-
                 )}
-
               </tbody>
-
-              {/* FOOTER TOTAL */}
               <tfoot className="bg-gray-100 font-semibold">
                 <tr>
-                  <td colSpan="10" className="border p-3 text-right">
-                    Total Amount
-                  </td>
+                  <td colSpan="13" className="border p-3 text-right">Total Amount</td>
                   <td className="border p-3">{totalAmount}</td>
-                  <td className="border p-3"></td>
                 </tr>
               </tfoot>
-
             </table>
-
           </div>
-
         </div>
-
       </main>
 
       <Footer />
 
-      {/* FORM MODAL */}
       {showForm && (
         <AddDataForm
+          showOnlineFields={true}
           editData={editRow !== null ? rows[editRow] : null}
-          onClose={() => {
-            setShowForm(false);
-            setEditRow(null);
-          }}
+          onClose={() => { setShowForm(false); setEditRow(null); }}
           onSave={saveData}
         />
       )}
-
     </div>
   );
 }

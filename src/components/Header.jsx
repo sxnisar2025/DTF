@@ -2,7 +2,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Header() {
-  const { logout } = useAuth();
+
+  const { logout, user } = useAuth(); // <-- get user from context
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -11,19 +12,24 @@ export default function Header() {
   };
 
   return (
-    <div className="bg-black text-white p-4 flex justify-between">
+    <div className="bg-black text-white p-4 flex justify-between items-center">
 
+      {/* LOGO */}
       <div className="font-bold text-lg">
         DTF
       </div>
 
+      {/* MENU */}
       <div className="flex gap-6 items-center">
 
-        <Link to="/dashboard">Dashboard</Link>
+        {/* ADMIN ONLY DASHBOARD */}
+        {user?.role === "admin" && (
+          <Link to="/dashboard">Dashboard</Link>
+        )}
+
         <Link to="/record">Record</Link>
         <Link to="/stock">Stock</Link>
         <Link to="/order-online">Online Order</Link>
-
 
         <button
           onClick={handleLogout}

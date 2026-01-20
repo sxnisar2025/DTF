@@ -82,7 +82,7 @@ export default function Dashboard() {
         acc.balance += balance;
         acc.deposit += deposit;
         acc.amount += amount;
-        acc.profit += amount - cost;
+        acc.profit += amount - cost*200;
 
         return acc;
 

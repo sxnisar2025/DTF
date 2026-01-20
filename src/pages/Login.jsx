@@ -8,22 +8,26 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+const handleSubmit = (e) => {
+  e.preventDefault();
 
-    // TEMP DEMO USERS
-    if (email === "admin@gmail.com" && password === "123456") {
-      login({ email, role: "admin" });
-      navigate("/dashboard");
-    }
-    else if (email === "user@gmail.com" && password === "123456") {
-      login({ email, role: "user" });
-      navigate("/dashboard");
-    }
-    else {
-      alert("Invalid login credentials");
-    }
-  };
+  // ADMIN LOGIN
+  if (email === "admin@gmail.com" && password === "123456") {
+    login({ email, role: "admin" });
+    navigate("/dashboard"); // admin allowed
+  }
+
+  // USER LOGIN
+  else if (email === "user@gmail.com" && password === "123456") {
+    login({ email, role: "user" });
+    navigate("/record"); // user redirected to Record
+  }
+
+  else {
+    alert("Invalid login credentials");
+  }
+};
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">

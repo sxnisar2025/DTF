@@ -9,16 +9,14 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  CartesianGrid
+  CartesianGrid,
+  LineChart,
+  Line
 } from "recharts";
 
 export default function Dashboard() {
 
   const [type, setType] = useState("record");
-
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [month, setMonth] = useState("");
@@ -27,16 +25,23 @@ export default function Dashboard() {
 
   const data = useMemo(() => {
 
-    const stored =
-      type === "record"
-        ? JSON.parse(localStorage.getItem("records")) || []
-        : JSON.parse(localStorage.getItem("onlineOrders")) || [];
+    if (type === "record") {
+      return JSON.parse(localStorage.getItem("records")) || [];
+    }
 
-    return stored;
+    if (type === "online") {
+      return JSON.parse(localStorage.getItem("onlineOrders")) || [];
+    }
+
+    // ✅ ALL PAYMENT (Record + Online)
+    const record = JSON.parse(localStorage.getItem("records")) || [];
+    const online = JSON.parse(localStorage.getItem("onlineOrders")) || [];
+
+    return [...record, ...online];
 
   }, [type]);
 
-  // ================= FILTER DATA =================
+  // ================= FILTER =================
 
   const filteredData = useMemo(() => {
 
@@ -49,16 +54,14 @@ export default function Dashboard() {
       if (toDate) dateMatch = dateMatch && rowDate <= new Date(toDate);
 
       let monthMatch = true;
-      if (month) {
-        monthMatch = rowDate.getMonth() + 1 === Number(month);
-      }
+      if (month) monthMatch = rowDate.getMonth() + 1 === Number(month);
 
       return dateMatch && monthMatch;
     });
 
   }, [data, fromDate, toDate, month]);
 
-  // ================= TOTAL CALCULATION =================
+  // ================= TOTALS =================
 
   const totals = useMemo(() => {
 
@@ -82,6 +85,7 @@ export default function Dashboard() {
         acc.profit += amount - cost;
 
         return acc;
+
       },
       {
         size: 0,
@@ -96,20 +100,67 @@ export default function Dashboard() {
 
   }, [filteredData]);
 
-  // ================= CHART DATA =================
+  // ================= WEEKLY PAYMENT =================
 
-  const barData = useMemo(() => [
-    { name: "Cash", value: totals.cash },
-    { name: "Transfer", value: totals.transfer },
-    { name: "Balance", value: totals.balance },
-    { name: "Deposit", value: totals.deposit }
-  ], [totals]);
+  const weeklyGraph = useMemo(() => {
 
-  const pieData = useMemo(() => [
-    { name: "Cash", value: totals.cash },
-    { name: "Transfer", value: totals.transfer },
-    { name: "Deposit", value: totals.deposit }
-  ], [totals]);
+    const map = {};
+
+    filteredData.forEach((r) => {
+
+      const d = new Date(r.date);
+      const week = Math.ceil(d.getDate() / 7);
+      const label = `${d.toLocaleString("default", { month: "short" })}-W${week}`;
+
+      if (!map[label]) map[label] = { week: label, amount: 0 };
+
+      map[label].amount += Number(r.amount || 0);
+
+    });
+
+    return Object.values(map).slice(-4);
+
+  }, [filteredData]);
+
+  // ================= MONTHLY AMOUNT =================
+
+  const monthlyAmount = useMemo(() => {
+
+    const map = {};
+
+    filteredData.forEach((r) => {
+
+      const month = new Date(r.date).toLocaleString("default", { month: "short" });
+
+      if (!map[month]) map[month] = { month, amount: 0 };
+
+      map[month].amount += Number(r.amount || 0);
+
+    });
+
+    return Object.values(map);
+
+  }, [filteredData]);
+
+  // ================= MONTHLY SIZE =================
+
+  const monthlySize = useMemo(() => {
+
+    const map = {};
+
+    filteredData.forEach((r) => {
+
+      const month = new Date(r.date).toLocaleString("default", { month: "short" });
+
+      if (!map[month]) map[month] = { month, size: 0 };
+
+      map[month].size += Number(r.size || 0);
+
+    });
+
+    return Object.values(map);
+
+  }, [filteredData]);
 
   const printDashboard = () => window.print();
 
@@ -122,7 +173,7 @@ export default function Dashboard() {
 
         {/* ================= FILTER BAR ================= */}
 
-        <div className="bg-white p-5 rounded-xl shadow mb-5 grid md:grid-cols-5 gap-3 items-center">
+        <div className="bg-white p-5 rounded-xl shadow mb-6 grid md:grid-cols-5 gap-3">
 
           <h1 className="text-xl font-bold">Dashboard</h1>
 
@@ -133,6 +184,7 @@ export default function Dashboard() {
           >
             <option value="record">Record</option>
             <option value="online">Online Order</option>
+            <option value="all">All Payment</option>
           </select>
 
           <input
@@ -178,55 +230,68 @@ export default function Dashboard() {
 
         </div>
 
-        {/* ================= CHARTS ================= */}
+        {/* ================= PAYMENT SUMMARY ================= */}
+
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+
+          <ChartBox title="Payment Summary">
+
+            <BarChart data={[
+              { name: "Cash", value: totals.cash },
+              { name: "Transfer", value: totals.transfer },
+              { name: "Balance", value: totals.balance },
+              { name: "Deposit", value: totals.deposit }
+            ]}>
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" />
+              <Bar dataKey="value" fill="#4f46e5" />
+            </BarChart>
+
+          </ChartBox>
+
+          <ChartBox title="Weekly Payment (Last 4 Weeks)">
+
+            <BarChart data={weeklyGraph}>
+              <XAxis dataKey="week" />
+              <YAxis />
+              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" />
+              <Bar dataKey="amount" fill="#22c55e" />
+            </BarChart>
+
+          </ChartBox>
+
+        </div>
+
+        {/* ================= MONTHLY ================= */}
 
         <div className="grid md:grid-cols-2 gap-6">
 
-          {/* BAR CHART */}
+          <ChartBox title="Monthly Amount">
 
-          <div className="bg-white p-5 rounded-xl shadow">
+            <LineChart data={monthlyAmount}>
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" />
+              <Line dataKey="amount" stroke="#6366f1" strokeWidth={3} />
+            </LineChart>
 
-            <h2 className="font-semibold mb-3">Payment Summary</h2>
+          </ChartBox>
 
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={barData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="value" />
-              </BarChart>
-            </ResponsiveContainer>
+          <ChartBox title="Monthly Material Size">
 
-          </div>
+            <BarChart data={monthlySize}>
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" />
+              <Bar dataKey="size" fill="#f97316" />
+            </BarChart>
 
-          {/* PIE CHART */}
-
-          <div className="bg-white p-5 rounded-xl shadow">
-
-            <h2 className="font-semibold mb-3">Income Distribution</h2>
-
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  outerRadius={100}
-                  label
-                >
-                  {pieData.map((_, i) => (
-                    <Cell key={i} />
-                  ))}
-                </Pie>
-
-                <Tooltip />
-
-              </PieChart>
-            </ResponsiveContainer>
-
-          </div>
+          </ChartBox>
 
         </div>
 
@@ -249,13 +314,24 @@ export default function Dashboard() {
   );
 }
 
-// ================= CARD COMPONENT =================
+// ================= COMPONENTS =================
 
 function Card({ title, value }) {
   return (
     <div className="bg-white shadow rounded-lg p-4 text-center">
       <p className="text-sm text-gray-500">{title}</p>
       <h2 className="text-xl font-bold mt-1">{value}</h2>
+    </div>
+  );
+}
+
+function ChartBox({ title, children }) {
+  return (
+    <div className="bg-white p-5 rounded-xl shadow">
+      <h2 className="font-semibold mb-3">{title}</h2>
+      <ResponsiveContainer width="100%" height={300}>
+        {children}
+      </ResponsiveContainer>
     </div>
   );
 }

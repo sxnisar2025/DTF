@@ -143,7 +143,7 @@ export default function Record() {
 
           {/* HEADER */}
           <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
-            <h1 className="text-2xl font-bold">Record</h1>
+            <h1 className="text-2xl font-bold">Local Order</h1>
             <div className="flex flex-wrap gap-2">
               <button onClick={exportExcel} className="border px-3 py-2 rounded">Excel</button>
               <button onClick={exportCSV} className="border px-3 py-2 rounded">CSV</button>

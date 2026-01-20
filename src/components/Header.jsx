@@ -27,7 +27,7 @@ export default function Header() {
           <Link to="/dashboard">Dashboard</Link>
         )}
 
-        <Link to="/record">Record</Link>
+        <Link to="/local-order">Local Order</Link>
         <Link to="/stock">Stock</Link>
         <Link to="/order-online">Online Order</Link>
 

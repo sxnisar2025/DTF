@@ -182,7 +182,7 @@ export default function Dashboard() {
             onChange={(e) => setType(e.target.value)}
             className="border p-2 rounded"
           >
-            <option value="record">Record</option>
+            <option value="record">Local Order</option>
             <option value="online">Online Order</option>
             <option value="all">All Payment</option>
           </select>

@@ -16,7 +16,9 @@ import {
 
 export default function Dashboard() {
 
-  const [type, setType] = useState("record");
+  // ================= STATES =================
+
+  const [type, setType] = useState("record"); // record | all
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [month, setMonth] = useState("");
@@ -24,22 +26,11 @@ export default function Dashboard() {
   // ================= LOAD DATA =================
 
   const data = useMemo(() => {
+    const records = JSON.parse(localStorage.getItem("records")) || [];
 
-    if (type === "record") {
-      return JSON.parse(localStorage.getItem("records")) || [];
-    }
-
-    if (type === "online") {
-      return JSON.parse(localStorage.getItem("onlineOrders")) || [];
-    }
-
-    // ✅ ALL PAYMENT (Record + Online)
-    const record = JSON.parse(localStorage.getItem("records")) || [];
-    const online = JSON.parse(localStorage.getItem("onlineOrders")) || [];
-
-    return [...record, ...online];
-
-  }, [type]);
+    // Since online orders removed — ALL = RECORDS
+    return records;
+  }, []);
 
   // ================= FILTER =================
 
@@ -82,7 +73,9 @@ export default function Dashboard() {
         acc.balance += balance;
         acc.deposit += deposit;
         acc.amount += amount;
-        acc.profit += amount - cost*200;
+
+        // Profit formula
+        acc.profit += amount - cost * 200;
 
         return acc;
 
@@ -100,7 +93,7 @@ export default function Dashboard() {
 
   }, [filteredData]);
 
-  // ================= WEEKLY PAYMENT =================
+  // ================= WEEKLY GRAPH =================
 
   const weeklyGraph = useMemo(() => {
 
@@ -130,11 +123,11 @@ export default function Dashboard() {
 
     filteredData.forEach((r) => {
 
-      const month = new Date(r.date).toLocaleString("default", { month: "short" });
+      const m = new Date(r.date).toLocaleString("default", { month: "short" });
 
-      if (!map[month]) map[month] = { month, amount: 0 };
+      if (!map[m]) map[m] = { month: m, amount: 0 };
 
-      map[month].amount += Number(r.amount || 0);
+      map[m].amount += Number(r.amount || 0);
 
     });
 
@@ -150,11 +143,11 @@ export default function Dashboard() {
 
     filteredData.forEach((r) => {
 
-      const month = new Date(r.date).toLocaleString("default", { month: "short" });
+      const m = new Date(r.date).toLocaleString("default", { month: "short" });
 
-      if (!map[month]) map[month] = { month, size: 0 };
+      if (!map[m]) map[m] = { month: m, size: 0 };
 
-      map[month].size += Number(r.size || 0);
+      map[m].size += Number(r.size || 0);
 
     });
 
@@ -183,7 +176,6 @@ export default function Dashboard() {
             className="border p-2 rounded"
           >
             <option value="record">Local Order</option>
-            <option value="online">Online Order</option>
             <option value="all">All Payment</option>
           </select>
 
@@ -230,7 +222,7 @@ export default function Dashboard() {
 
         </div>
 
-        {/* ================= PAYMENT SUMMARY ================= */}
+        {/* ================= CHARTS ================= */}
 
         <div className="grid md:grid-cols-2 gap-6 mb-8">
 
@@ -264,8 +256,6 @@ export default function Dashboard() {
           </ChartBox>
 
         </div>
-
-        {/* ================= MONTHLY ================= */}
 
         <div className="grid md:grid-cols-2 gap-6">
 

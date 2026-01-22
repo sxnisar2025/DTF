@@ -3,33 +3,39 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
-const handleSubmit = (e) => {
-  e.preventDefault();
+  const handleSubmit = (e) => {
+    e.preventDefault();
 
-  // ADMIN LOGIN
-  if (email === "admin@gmail.com" && password === "123456") {
-    login({ email, role: "admin" });
-    navigate("/dashboard"); // admin allowed
-  }
+    // ADMIN LOGIN
+    if (email === "admin@gmail.com" && password === "123456") {
 
-  // USER LOGIN
-  else if (email === "user@gmail.com" && password === "123456") {
-    login({ email, role: "user" });
-    navigate("/record"); // user redirected to Record
-  }
+      login({ email, role: "admin" });
+      navigate("/dashboard");
 
-  else {
-    alert("Invalid login credentials");
-  }
-};
+    }
 
+    // USER LOGIN
+    else if (email === "user@gmail.com" && password === "123456") {
+
+      login({ email, role: "user" });
+      navigate("/local-order");
+
+    }
+
+    else {
+      alert("Invalid login credentials");
+    }
+  };
 
   return (
+
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
 
       <form

@@ -4,11 +4,11 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Record from "./pages/Record";
-import OrderOnline from "./pages/OrderOnline";
+
 import Stock from "./pages/Stock";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
-
+import Customers from "./pages/Customers";
 // ✅ Dummy Data
 import { recordData, onlineOrdersData } from "./data/dummyData";
 
@@ -44,7 +44,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-
+<Route path="/customers" element={<Customers />} />
           <Route
             path="/local-order"
             element={
@@ -54,14 +54,7 @@ export default function App() {
             }
           />
 
-          <Route
-            path="/order-online"
-            element={
-              <ProtectedRoute>
-                <OrderOnline />
-              </ProtectedRoute>
-            }
-          />
+          
 
           <Route
             path="/stock"

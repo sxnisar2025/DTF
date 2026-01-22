@@ -26,10 +26,11 @@ export default function Header() {
         {user?.role === "admin" && (
           <Link to="/dashboard">Dashboard</Link>
         )}
+<Link to="/customers">Customers</Link>
 
         <Link to="/local-order">Local Order</Link>
         <Link to="/stock">Stock</Link>
-        <Link to="/order-online">Online Order</Link>
+        
 
         <button
           onClick={handleLogout}

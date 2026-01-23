@@ -16,7 +16,7 @@ export default function Header() {
 
       {/* LOGO */}
       <div className="font-bold text-lg">
-        DTF
+        DTF System
       </div>
 
       {/* MENU */}
@@ -30,6 +30,9 @@ export default function Header() {
 
         <Link to="/local-order">Local Order</Link>
         <Link to="/stock">Stock</Link>
+        <Link to="/cashflow" className="hover:text-gray-300">
+              Cashflow
+            </Link>
         
 
         <button

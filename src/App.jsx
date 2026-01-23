@@ -9,6 +9,7 @@ import Stock from "./pages/Stock";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import Customers from "./pages/Customers";
+import Cashflow from "./pages/Cashflow";
 // ✅ Dummy Data
 import { recordData, onlineOrdersData } from "./data/dummyData";
 
@@ -64,6 +65,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/cashflow" element={<Cashflow />} />
 
         </Routes>
       </BrowserRouter>

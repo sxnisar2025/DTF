@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
@@ -7,135 +7,75 @@ export default function Cashflow() {
 
   const { user } = useAuth();
 
-  // ================= STATE =================
-
-  const [cashflow, setCashflow] = useState([]);
   const [paid, setPaid] = useState("");
-
-  const [editId, setEditId] = useState(null);
-
+  const [cashflow, setCashflow] = useState([]);
+  const [actualAmount, setActualAmount] = useState(0);
   const [monthFilter, setMonthFilter] = useState("");
 
-  // ================= LOAD STORAGE =================
+  // ================= LOAD =================
 
   useEffect(() => {
 
-    const stored = JSON.parse(localStorage.getItem("cashflow")) || [];
-    setCashflow(stored);
+    const storedCashflow =
+      JSON.parse(localStorage.getItem("cashflow")) || [];
+
+    setCashflow(storedCashflow);
+
+    const cash =
+      JSON.parse(localStorage.getItem("totalCash")) || 0;
+
+    setActualAmount(cash);
 
   }, []);
 
   // ================= SAVE =================
 
-  const handleSubmit = (e) => {
+  const addPayment = () => {
 
-    e.preventDefault();
+    if (!paid) return alert("Enter amount");
 
-    if (!paid) {
-      alert("Enter paid amount");
-      return;
-    }
+    const newRow = {
+      date: new Date().toISOString().slice(0, 10),
+      paid: Number(paid)
+    };
 
-    let updated;
-
-    if (editId) {
-
-      updated = cashflow.map(c =>
-        c.id === editId
-          ? { ...c, paid }
-          : c
-      );
-
-    } else {
-
-      const newPayment = {
-        id: Date.now(),
-        date: new Date().toLocaleDateString(),
-        paid: Number(paid)
-      };
-
-      updated = [...cashflow, newPayment];
-    }
+    const updated = [...cashflow, newRow];
 
     setCashflow(updated);
     localStorage.setItem("cashflow", JSON.stringify(updated));
-
-    resetForm();
-  };
-
-  // ================= RESET =================
-
-  const resetForm = () => {
 
     setPaid("");
-    setEditId(null);
-  };
-
-  // ================= EDIT =================
-
-  const editPayment = (row) => {
-
-    setPaid(row.paid);
-    setEditId(row.id);
-  };
-
-  // ================= DELETE =================
-
-  const deletePayment = (id) => {
-
-    if (!window.confirm("Delete payment?")) return;
-
-    const updated = cashflow.filter(c => c.id !== id);
-
-    setCashflow(updated);
-    localStorage.setItem("cashflow", JSON.stringify(updated));
   };
 
   // ================= FILTER =================
 
-  const filteredCashflow = cashflow.filter(c => {
+  const filtered = useMemo(() => {
 
-    if (!monthFilter) return true;
+    if (!monthFilter) return cashflow;
 
-    const recordMonth = new Date(c.date).getMonth();
+    return cashflow.filter(row => {
+      const m = new Date(row.date).getMonth() + 1;
+      return Number(monthFilter) === m;
+    });
 
-    return recordMonth === parseInt(monthFilter);
-  });
-
-  // ================= MONTH LIST =================
-
-  const months = [...new Set(
-    cashflow.map(c => new Date(c.date).getMonth())
-  )];
-
-  const monthNames = [
-    "January", "February", "March", "April",
-    "May", "June", "July", "August",
-    "September", "October", "November", "December"
-  ];
+  }, [cashflow, monthFilter]);
 
   // ================= TOTAL PAID =================
 
-  const totalPaid = filteredCashflow.reduce(
-    (sum, c) => sum + Number(c.paid), 0
-  );
+  const totalPaid = useMemo(() => {
 
-  // ================= ACTUAL AMOUNT (FROM LOCAL ORDER) =================
+    return filtered.reduce(
+      (sum, row) => sum + Number(row.paid),
+      0
+    );
 
-  const localOrders = JSON.parse(localStorage.getItem("localOrders")) || [];
-
-  const actualAmount = localOrders.reduce(
-    (sum, o) => sum + Number(o.cash || 0), 0
-  );
+  }, [filtered]);
 
   // ================= BALANCE =================
 
-  const balance = totalPaid - actualAmount;
-
-  // ================= UI =================
+  const balance = actualAmount - totalPaid;
 
   return (
-
     <div className="min-h-screen flex flex-col bg-gray-100">
 
       <Header />
@@ -152,150 +92,82 @@ export default function Cashflow() {
 
           {user?.role === "admin" && (
 
-            <form
-              onSubmit={handleSubmit}
-              className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4"
-            >
-
-              <input
-                value={new Date().toLocaleDateString()}
-                disabled
-                className="border p-2 rounded bg-gray-100"
-              />
+            <div className="flex gap-2 mb-4">
 
               <input
                 type="number"
                 placeholder="Paid Amount"
                 value={paid}
-                onChange={e => setPaid(e.target.value)}
-                className="border p-2 rounded"
-                required
+                onChange={(e) => setPaid(e.target.value)}
+                className="border p-2"
               />
 
-              <button className="bg-black text-white rounded">
-                {editId ? "Update" : "Submit"}
+              <button
+                onClick={addPayment}
+                className="bg-black text-white px-4"
+              >
+                Submit
               </button>
 
-            </form>
+            </div>
 
           )}
 
           {/* FILTER */}
 
-          <div className="mb-4">
-
-            <select
-              value={monthFilter}
-              onChange={e => setMonthFilter(e.target.value)}
-              className="border p-2 rounded"
-            >
-
-              <option value="">All Months</option>
-
-              {months.map(m => (
-
-                <option key={m} value={m}>
-                  {monthNames[m]}
-                </option>
-
-              ))}
-
-            </select>
-
-          </div>
+          <select
+            value={monthFilter}
+            onChange={(e) => setMonthFilter(e.target.value)}
+            className="border p-2 mb-3"
+          >
+            <option value="">All Months</option>
+            {[...Array(12)].map((_, i) => (
+              <option key={i} value={i + 1}>
+                {new Date(0, i).toLocaleString("default", { month: "long" })}
+              </option>
+            ))}
+          </select>
 
           {/* TABLE */}
 
-          <div className="overflow-x-auto">
+          <table className="w-full border">
 
-            <table className="w-full border text-sm">
+            <thead className="bg-gray-200">
+              <tr>
+                <th className="border p-2">Date</th>
+                <th className="border p-2">Paid</th>
+              </tr>
+            </thead>
 
-              <thead className="bg-gray-200">
+            <tbody>
 
-                <tr>
-                  <th className="border p-2">Date</th>
-                  <th className="border p-2">Paid</th>
+              {filtered.map((row, i) => (
 
-                  {user?.role === "admin" && (
-                    <th className="border p-2">Action</th>
-                  )}
-
+                <tr key={i}>
+                  <td className="border p-2">{row.date}</td>
+                  <td className="border p-2">{row.paid}</td>
                 </tr>
 
-              </thead>
+              ))}
 
-              <tbody>
+            </tbody>
 
-                {filteredCashflow.length === 0 ? (
+          </table>
 
-                  <tr>
-                    <td
-                      colSpan={user?.role === "admin" ? 3 : 2}
-                      className="text-center p-4"
-                    >
-                      No records found
-                    </td>
-                  </tr>
+          {/* FOOTER */}
 
-                ) : (
-
-                  filteredCashflow.map(c => (
-
-                    <tr key={c.id}>
-
-                      <td className="border p-2">{c.date}</td>
-                      <td className="border p-2">Rs {c.paid}</td>
-
-                      {user?.role === "admin" && (
-
-                        <td className="border p-2 flex gap-2">
-
-                          <button
-                            onClick={() => editPayment(c)}
-                            className="text-blue-600"
-                          >
-                            Edit
-                          </button>
-
-                          <button
-                            onClick={() => deletePayment(c.id)}
-                            className="text-red-600"
-                          >
-                            Delete
-                          </button>
-
-                        </td>
-
-                      )}
-
-                    </tr>
-
-                  ))
-
-                )}
-
-              </tbody>
-
-            </table>
-
-          </div>
-
-          {/* FOOTER TOTALS */}
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 font-semibold">
-
-            
+          <div className="mt-4 font-semibold space-y-1">
 
             <div>
-              Actual Amount: Rs {actualAmount}
+              Actual Amount (Cash from Orders): {actualAmount}
             </div>
 
             <div>
-              Total Paid: Rs {totalPaid}
+              Total Paid: {totalPaid}
             </div>
 
-            <div className={balance >= 0 ? "text-green-600" : "text-red-600"}>
-              Balance: Rs {balance}
+            <div>
+              Balance: {balance}
             </div>
 
           </div>

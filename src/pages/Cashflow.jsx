@@ -130,7 +130,7 @@ export default function Cashflow() {
 
           {/* TABLE */}
 
-          <table className="w-full border">
+          <table className="w-1/2 border">
 
             <thead className="bg-gray-200">
               <tr>

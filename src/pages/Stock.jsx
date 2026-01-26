@@ -18,77 +18,82 @@ export default function Stock() {
 
   // ================= STATE =================
 
-  const [itemOptions, setItemOptions] = useState([]);
+  const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState("");
+  const [editItemIndex, setEditItemIndex] = useState(null);
 
   const [stockList, setStockList] = useState([]);
+
   const [item, setItem] = useState("");
   const [quantity, setQuantity] = useState("");
+  const [type, setType] = useState("IN");
+
   const [editId, setEditId] = useState(null);
 
-  // Filters
   const [search, setSearch] = useState("");
-  const [monthFilter, setMonthFilter] = useState("");
 
-  // ================= LOAD STORAGE =================
+  // ================= LOAD DATA =================
 
   useEffect(() => {
 
-    const storedStock = JSON.parse(localStorage.getItem("stock")) || [];
+    const stock = JSON.parse(localStorage.getItem("stock")) || [];
     const storedItems =
       JSON.parse(localStorage.getItem("stockItems")) || defaultItems;
 
-    setStockList(storedStock);
-    setItemOptions(storedItems);
+    setStockList(stock);
+    setItems(storedItems);
 
   }, []);
 
   // ================= SAVE ITEMS =================
 
-  const saveItems = (items) => {
-    setItemOptions(items);
-    localStorage.setItem("stockItems", JSON.stringify(items));
+  const saveItems = (data) => {
+    setItems(data);
+    localStorage.setItem("stockItems", JSON.stringify(data));
   };
 
-  // ================= ADD ITEM =================
+  // ================= ADD / EDIT ITEM =================
 
-  const addNewItem = () => {
+  const handleItemSave = () => {
 
     if (!newItem.trim()) return;
 
-    if (itemOptions.includes(newItem)) {
-      alert("Item already exists");
-      return;
+    if (editItemIndex !== null) {
+
+      const updated = [...items];
+      updated[editItemIndex] = newItem;
+
+      saveItems(updated);
+
+      setEditItemIndex(null);
+
+    } else {
+
+      if (items.includes(newItem)) {
+        alert("Item already exists");
+        return;
+      }
+
+      saveItems([...items, newItem]);
     }
 
-    const updated = [...itemOptions, newItem];
-
-    saveItems(updated);
     setNewItem("");
   };
 
   // ================= DELETE ITEM =================
 
-  const deleteItem = (itemName) => {
+  const deleteItem = (name) => {
 
-    // Check if item already used in stock
-    const used = stockList.some(s => s.item === itemName);
+    const used = stockList.some(s => s.item === name);
 
     if (used) {
-      alert("Cannot delete item already used in stock records");
+      alert("Item already used in stock");
       return;
     }
 
-    if (!window.confirm(`Delete "${itemName}" item?`)) return;
+    if (!window.confirm("Delete this item?")) return;
 
-    const updated = itemOptions.filter(i => i !== itemName);
-
-    saveItems(updated);
-
-    // Reset dropdown if deleted selected item
-    if (item === itemName) {
-      setItem("");
-    }
+    saveItems(items.filter(i => i !== name));
   };
 
   // ================= AUTO SR =================
@@ -97,13 +102,13 @@ export default function Stock() {
 
     if (stockList.length === 0) return 1;
 
-    const max = Math.max(...stockList.map(s => s.sr));
-    return max + 1;
+    return Math.max(...stockList.map(s => s.sr)) + 1;
   };
 
   // ================= SAVE STOCK =================
 
   const handleSubmit = (e) => {
+
     e.preventDefault();
 
     if (!item || !quantity) {
@@ -111,26 +116,27 @@ export default function Stock() {
       return;
     }
 
+    const qty = Number(quantity);
+
     let updated;
 
     if (editId) {
 
       updated = stockList.map(s =>
         s.sr === editId
-          ? { ...s, item, quantity: Number(quantity) }
+          ? { ...s, item, quantity: qty, type }
           : s
       );
 
     } else {
 
-      const newStock = {
+      updated = [...stockList, {
         sr: generateSr(),
         date: new Date().toISOString().slice(0, 10),
         item,
-        quantity: Number(quantity)
-      };
-
-      updated = [...stockList, newStock];
+        quantity: qty,
+        type
+      }];
     }
 
     setStockList(updated);
@@ -142,16 +148,20 @@ export default function Stock() {
   // ================= RESET =================
 
   const resetForm = () => {
+
     setItem("");
     setQuantity("");
+    setType("IN");
     setEditId(null);
   };
 
-  // ================= EDIT =================
+  // ================= EDIT STOCK =================
 
   const editStock = (data) => {
+
     setItem(data.item);
     setQuantity(data.quantity);
+    setType(data.type);
     setEditId(data.sr);
   };
 
@@ -159,7 +169,7 @@ export default function Stock() {
 
   const deleteStock = (id) => {
 
-    if (!window.confirm("Delete this stock item?")) return;
+    if (!window.confirm("Delete this entry?")) return;
 
     const updated = stockList.filter(s => s.sr !== id);
 
@@ -169,52 +179,58 @@ export default function Stock() {
 
   // ================= FILTER =================
 
-  const filteredStock = stockList.filter(s => {
+  const filteredStock = stockList.filter(s =>
+    s.item.toLowerCase().includes(search.toLowerCase())
+  );
 
-    const query = search.toLowerCase();
+  // ================= REMAINING STOCK =================
 
-    const searchMatch =
-      s.item.toLowerCase().includes(query) ||
-      s.quantity.toString().includes(query);
-
-    const monthMatch = monthFilter
-      ? new Date(s.date).getMonth() === parseInt(monthFilter)
-      : true;
-
-    return searchMatch && monthMatch;
-  });
-
-  // ================= MONTH LIST =================
-
-  const months = [...new Set(
-    stockList.map(s => new Date(s.date).getMonth())
-  )];
-
-  const monthNames = [
-    "January", "February", "March", "April",
-    "May", "June", "July", "August",
-    "September", "October", "November", "December"
-  ];
-
-  // ================= TOTAL CALC =================
-
-  const totals = useMemo(() => {
+  const remainingStock = useMemo(() => {
 
     const result = {};
 
-    itemOptions.forEach(i => {
-      result[i] = 0;
-    });
+    items.forEach(i => result[i] = 0);
 
-    filteredStock.forEach(s => {
-      if (result[s.item] !== undefined) {
-        result[s.item] += Number(s.quantity);
+    stockList.forEach(s => {
+
+      if (!result[s.item] && result[s.item] !== 0) return;
+
+      if (s.type === "IN") {
+        result[s.item] += s.quantity;
+      } else {
+        result[s.item] -= s.quantity;
       }
+
     });
 
     return result;
 
-  }, [filteredStock, itemOptions]);
+  }, [stockList, items]);
+
+  // ================= EXPORT CSV =================
+
+  const exportExcel = () => {
+
+    let csv = "SR,Date,Item,Quantity,Type\n";
+
+    stockList.forEach(s => {
+      csv += `${s.sr},${s.date},${s.item},${s.quantity},${s.type}\n`;
+    });
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "stock-report.csv";
+    a.click();
+  };
+
+  // ================= PRINT =================
+
+  const printReport = () => {
+    window.print();
+  };
 
   // ================= UI =================
 
@@ -229,62 +245,63 @@ export default function Stock() {
         <div className="bg-white p-6 rounded shadow">
 
           <h2 className="text-xl font-bold mb-4">
-            Stock Management
+            Stock Management System
           </h2>
 
-          {/* ===== ITEM MANAGEMENT ===== */}
+          {/* ===== ITEM MANAGER ===== */}
 
           {user?.role === "admin" && (
 
             <div className="mb-5">
 
-              {/* ADD ITEM */}
-
-              <div className="flex gap-2 mb-3">
+              <div className="flex gap-2 mb-2">
 
                 <input
-                  placeholder="Add New Item"
+                  placeholder="Item name"
                   value={newItem}
                   onChange={e => setNewItem(e.target.value)}
                   className="border p-2 rounded flex-1"
                 />
 
                 <button
-                  onClick={addNewItem}
+                  onClick={handleItemSave}
                   className="bg-green-600 text-white px-4 rounded"
                 >
-                  Add Item
+                  {editItemIndex !== null ? "Update" : "Add"}
                 </button>
 
               </div>
 
-              {/* ITEM LIST */}
+              {items.map((i, idx) => (
 
-              <div className="border rounded p-3 bg-gray-50">
+                <div key={idx} className="flex justify-between mb-1">
 
-                <h3 className="font-semibold mb-2">Item List</h3>
+                  <span>{i}</span>
 
-                {itemOptions.map((i, idx) => (
+                  <div className="flex gap-2">
 
-                  <div
-                    key={idx}
-                    className="flex justify-between items-center mb-1"
-                  >
-
-                    <span>{i}</span>
+                    <button
+                      onClick={() => {
+                        setNewItem(i);
+                        setEditItemIndex(idx);
+                      }}
+                      className="text-blue-600"
+                    >
+                      Edit
+                    </button>
 
                     <button
                       onClick={() => deleteItem(i)}
-                      className="text-red-600 text-sm"
+                      className="text-red-600"
                     >
                       Delete
                     </button>
 
                   </div>
 
-                ))}
+                </div>
 
-              </div>
+              ))}
 
             </div>
 
@@ -296,7 +313,7 @@ export default function Stock() {
 
             <form
               onSubmit={handleSubmit}
-              className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4"
+              className="grid md:grid-cols-4 gap-2 mb-4"
             >
 
               <select
@@ -305,12 +322,11 @@ export default function Stock() {
                 className="border p-2 rounded"
                 required
               >
+
                 <option value="">Select Item</option>
 
-                {itemOptions.map((opt, i) => (
-                  <option key={i} value={opt}>
-                    {opt}
-                  </option>
+                {items.map((i, idx) => (
+                  <option key={idx}>{i}</option>
                 ))}
 
               </select>
@@ -324,116 +340,126 @@ export default function Stock() {
                 required
               />
 
-              <button className="bg-black text-white rounded px-4">
-                {editId ? "Update" : "Add"}
+              <select
+                value={type}
+                onChange={e => setType(e.target.value)}
+                className="border p-2 rounded"
+              >
+                <option value="IN">Stock IN</option>
+                <option value="OUT">Stock OUT</option>
+              </select>
+
+              <button className="bg-black text-white rounded">
+                {editId ? "Update" : "Save"}
               </button>
 
             </form>
 
           )}
 
-          {/* ===== FILTER ===== */}
+          {/* ===== EXPORT / PRINT ===== */}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+          <div className="flex gap-3 mb-3">
 
-            <input
-              placeholder="Search..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="border p-2 rounded"
-            />
-
-            <select
-              value={monthFilter}
-              onChange={e => setMonthFilter(e.target.value)}
-              className="border p-2 rounded"
+            <button
+              onClick={exportExcel}
+              className="bg-blue-600 text-white px-4 py-1 rounded"
             >
+              Export Excel
+            </button>
 
-              <option value="">All Months</option>
-
-              {months.map(m => (
-                <option key={m} value={m}>
-                  {monthNames[m]}
-                </option>
-              ))}
-
-            </select>
+            <button
+              onClick={printReport}
+              className="bg-gray-700 text-white px-4 py-1 rounded"
+            >
+              Print
+            </button>
 
           </div>
 
+          {/* ===== SEARCH ===== */}
+
+          <input
+            placeholder="Search Item..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="border p-2 rounded mb-3 w-full"
+          />
+
           {/* ===== TABLE ===== */}
 
-          <div className="overflow-x-auto">
+          <table className="w-full border text-sm">
 
-            <table className="w-full border text-sm">
+            <thead className="bg-gray-200">
 
-              <thead className="bg-gray-200">
+              <tr>
+                <th className="border p-2">SR</th>
+                <th className="border p-2">Date</th>
+                <th className="border p-2">Item</th>
+                <th className="border p-2">Qty</th>
+                <th className="border p-2">Type</th>
 
-                <tr>
-                  <th className="border p-2">Sr</th>
-                  <th className="border p-2">Date</th>
-                  <th className="border p-2">Item</th>
-                  <th className="border p-2">Qty</th>
+                {user?.role === "admin" && (
+                  <th className="border p-2">Action</th>
+                )}
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              {filteredStock.map(s => (
+
+                <tr key={s.sr}>
+
+                  <td className="border p-2">{s.sr}</td>
+                  <td className="border p-2">{s.date}</td>
+                  <td className="border p-2">{s.item}</td>
+                  <td className="border p-2">{s.quantity}</td>
+                  <td className="border p-2">{s.type}</td>
 
                   {user?.role === "admin" && (
-                    <th className="border p-2">Action</th>
+
+                    <td className="border p-2">
+
+                      <button
+                        onClick={() => editStock(s)}
+                        className="text-blue-600 mr-2"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        onClick={() => deleteStock(s.sr)}
+                        className="text-red-600"
+                      >
+                        Delete
+                      </button>
+
+                    </td>
+
                   )}
 
                 </tr>
 
-              </thead>
+              ))}
 
-              <tbody>
+            </tbody>
 
-                {filteredStock.map(s => (
+          </table>
 
-                  <tr key={s.sr}>
+          {/* ===== REMAINING STOCK ===== */}
 
-                    <td className="border p-2">{s.sr}</td>
-                    <td className="border p-2">{s.date}</td>
-                    <td className="border p-2">{s.item}</td>
-                    <td className="border p-2">{s.quantity}</td>
+          <div className="grid md:grid-cols-4 gap-3 mt-5">
 
-                    {user?.role === "admin" && (
+            {items.map((i, idx) => (
 
-                      <td className="border p-2 flex gap-2">
+              <div key={idx} className="bg-gray-100 p-3 rounded text-center">
 
-                        <button
-                          onClick={() => editStock(s)}
-                          className="text-blue-600"
-                        >
-                          Edit
-                        </button>
+                <strong>{i}</strong>
+                <div>Remaining: {remainingStock[i]}</div>
 
-                        <button
-                          onClick={() => deleteStock(s.sr)}
-                          className="text-red-600"
-                        >
-                          Delete
-                        </button>
-
-                      </td>
-
-                    )}
-
-                  </tr>
-
-                ))}
-
-              </tbody>
-
-            </table>
-
-          </div>
-
-          {/* ===== TOTAL SUMMARY ===== */}
-
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-3 text-center font-semibold">
-
-            {itemOptions.map((i, idx) => (
-
-              <div key={idx} className="bg-gray-100 p-3 rounded">
-                {i}: {totals[i]}
               </div>
 
             ))}

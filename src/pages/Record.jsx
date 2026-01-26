@@ -73,11 +73,18 @@ export default function Record() {
     toDate
   ]);
 
-  // ================= TOTAL =================
+  // ================= TOTALS =================
 
   const totalAmount = useMemo(() => {
     return filteredRows.reduce(
       (sum, row) => sum + Number(row.amount || 0),
+      0
+    );
+  }, [filteredRows]);
+
+  const totalCash = useMemo(() => {
+    return filteredRows.reduce(
+      (sum, row) => sum + Number(row.cash || 0),
       0
     );
   }, [filteredRows]);
@@ -108,7 +115,7 @@ export default function Record() {
       startY: 20,
       head: [[
         "#", "Date", "Customer", "Size", "Rate", "Cost",
-        "Cash", "Transfer", "Balance", "Deposit", "Amount"
+        "Cash", "Transfer", "Balance", "Amount"
       ]],
       body: filteredRows.map((r, i) => [
         i + 1,
@@ -120,7 +127,6 @@ export default function Record() {
         r.cash,
         r.transfer,
         r.balance,
-        r.deposit,
         r.amount
       ])
     });
@@ -265,7 +271,7 @@ export default function Record() {
 
               <thead className="bg-gray-200">
                 <tr>
-                  {["#", "Date", "Customer", "Size", "Rate", "Cost", "Cash", "Transfer", "Balance", "Deposit", "Amount", "Action"]
+                  {["#", "Date", "Customer", "Size", "Rate", "Cost", "Cash", "Transfer", "Balance", "Amount", "Action"]
                     .map(h => (
                       <th key={h} className="border p-2">{h}</th>
                     ))}
@@ -277,7 +283,7 @@ export default function Record() {
                 {filteredRows.length === 0 ? (
 
                   <tr>
-                    <td colSpan="12" className="p-6 text-center">
+                    <td colSpan="11" className="p-6 text-center">
                       No data found
                     </td>
                   </tr>
@@ -297,7 +303,6 @@ export default function Record() {
                       <td className="border p-2">{r.cash}</td>
                       <td className="border p-2">{r.transfer}</td>
                       <td className="border p-2">{r.balance}</td>
-                      <td className="border p-2">{r.deposit}</td>
                       <td className="border p-2 font-semibold">{r.amount}</td>
 
                       <td className="border p-2 flex gap-2">
@@ -328,14 +333,26 @@ export default function Record() {
 
               </tbody>
 
+              {/* FOOTER TOTALS */}
+
               <tfoot className="bg-gray-100 font-semibold">
+
                 <tr>
-                  <td colSpan="10" className="border p-3 text-right">
+                  <td colSpan="9" className="border p-3 text-right">
+                    Total Cash Received
+                  </td>
+                  <td className="border p-3">{totalCash}</td>
+                  <td className="border p-3"></td>
+                </tr>
+
+                <tr>
+                  <td colSpan="9" className="border p-3 text-right">
                     Total Amount
                   </td>
                   <td className="border p-3">{totalAmount}</td>
                   <td className="border p-3"></td>
                 </tr>
+
               </tfoot>
 
             </table>

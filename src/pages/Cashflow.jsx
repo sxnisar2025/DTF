@@ -158,17 +158,17 @@ export default function Cashflow() {
 
           <div className="mt-4 font-semibold space-y-1">
 
-            <div>
+            <h2>
               Actual Amount (Cash from Orders): {actualAmount}
-            </div>
+            </h2>
 
-            <div>
+            <h2>
               Total Paid: {totalPaid}
-            </div>
+            </h2>
 
-            <div>
+            <h2>
               Balance: {balance}
-            </div>
+            </h2>
 
           </div>
 

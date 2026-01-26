@@ -63,7 +63,6 @@ export default function Dashboard() {
         const cash = Number(item.cash || 0);
         const transfer = Number(item.transfer || 0);
         const balance = Number(item.balance || 0);
-        const deposit = Number(item.deposit || 0);
         const amount = Number(item.amount || 0);
         const cost = Number(item.total || 0);
 
@@ -71,7 +70,6 @@ export default function Dashboard() {
         acc.cash += cash;
         acc.transfer += transfer;
         acc.balance += balance;
-        acc.deposit += deposit;
         acc.amount += amount;
 
         // Profit formula
@@ -85,7 +83,6 @@ export default function Dashboard() {
         cash: 0,
         transfer: 0,
         balance: 0,
-        deposit: 0,
         amount: 0,
         profit: 0
       }
@@ -210,13 +207,12 @@ export default function Dashboard() {
 
         {/* ================= SUMMARY CARDS ================= */}
 
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
 
           <Card title="Size" value={totals.size} />
           <Card title="Cash" value={totals.cash} />
           <Card title="Transfer" value={totals.transfer} />
           <Card title="Balance" value={totals.balance} />
-          <Card title="Deposit" value={totals.deposit} />
           <Card title="Amount" value={totals.amount} />
           <Card title="Profit" value={totals.profit} />
 
@@ -231,8 +227,7 @@ export default function Dashboard() {
             <BarChart data={[
               { name: "Cash", value: totals.cash },
               { name: "Transfer", value: totals.transfer },
-              { name: "Balance", value: totals.balance },
-              { name: "Deposit", value: totals.deposit }
+              { name: "Balance", value: totals.balance }
             ]}>
               <XAxis dataKey="name" />
               <YAxis />

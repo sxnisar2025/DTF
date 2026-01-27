@@ -7,16 +7,12 @@ export default function Stock() {
 
   const { user } = useAuth();
 
-  // ================= DEFAULT ITEMS =================
-
   const defaultItems = [
     "INK White",
     "INK COLOR",
     "POWDER",
     "DTF ROLL"
   ];
-
-  // ================= STATE =================
 
   const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState("");
@@ -29,10 +25,7 @@ export default function Stock() {
   const [type, setType] = useState("IN");
 
   const [editId, setEditId] = useState(null);
-
   const [search, setSearch] = useState("");
-
-  // ================= LOAD DATA =================
 
   useEffect(() => {
 
@@ -45,14 +38,10 @@ export default function Stock() {
 
   }, []);
 
-  // ================= SAVE ITEMS =================
-
   const saveItems = (data) => {
     setItems(data);
     localStorage.setItem("stockItems", JSON.stringify(data));
   };
-
-  // ================= ADD / EDIT ITEM =================
 
   const handleItemSave = () => {
 
@@ -64,7 +53,6 @@ export default function Stock() {
       updated[editItemIndex] = newItem;
 
       saveItems(updated);
-
       setEditItemIndex(null);
 
     } else {
@@ -80,8 +68,6 @@ export default function Stock() {
     setNewItem("");
   };
 
-  // ================= DELETE ITEM =================
-
   const deleteItem = (name) => {
 
     const used = stockList.some(s => s.item === name);
@@ -96,16 +82,12 @@ export default function Stock() {
     saveItems(items.filter(i => i !== name));
   };
 
-  // ================= AUTO SR =================
-
   const generateSr = () => {
 
     if (stockList.length === 0) return 1;
 
     return Math.max(...stockList.map(s => s.sr)) + 1;
   };
-
-  // ================= SAVE STOCK =================
 
   const handleSubmit = (e) => {
 
@@ -145,8 +127,6 @@ export default function Stock() {
     resetForm();
   };
 
-  // ================= RESET =================
-
   const resetForm = () => {
 
     setItem("");
@@ -155,8 +135,6 @@ export default function Stock() {
     setEditId(null);
   };
 
-  // ================= EDIT STOCK =================
-
   const editStock = (data) => {
 
     setItem(data.item);
@@ -164,8 +142,6 @@ export default function Stock() {
     setType(data.type);
     setEditId(data.sr);
   };
-
-  // ================= DELETE STOCK =================
 
   const deleteStock = (id) => {
 
@@ -177,37 +153,27 @@ export default function Stock() {
     localStorage.setItem("stock", JSON.stringify(updated));
   };
 
-  // ================= FILTER =================
-
   const filteredStock = stockList.filter(s =>
     s.item.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ================= REMAINING STOCK =================
-
   const remainingStock = useMemo(() => {
 
     const result = {};
-
     items.forEach(i => result[i] = 0);
 
     stockList.forEach(s => {
 
       if (!result[s.item] && result[s.item] !== 0) return;
 
-      if (s.type === "IN") {
-        result[s.item] += s.quantity;
-      } else {
-        result[s.item] -= s.quantity;
-      }
+      if (s.type === "IN") result[s.item] += s.quantity;
+      else result[s.item] -= s.quantity;
 
     });
 
     return result;
 
   }, [stockList, items]);
-
-  // ================= EXPORT CSV =================
 
   const exportExcel = () => {
 
@@ -226,46 +192,40 @@ export default function Stock() {
     a.click();
   };
 
-  // ================= PRINT =================
-
-  const printReport = () => {
-    window.print();
-  };
-
-  // ================= UI =================
+  const printReport = () => window.print();
 
   return (
 
-    <div className="min-h-screen flex flex-col bg-gray-100">
+    <div className="d-flex flex-column min-vh-100 bg-light">
 
       <Header />
 
-      <main className="flex-1 p-6">
+      <main className="container-fluid flex-fill p-4">
 
-        <div className="bg-white p-6 rounded shadow">
+        <div className="card p-4 shadow">
 
-          <h2 className="text-xl font-bold mb-4">
+          <h4 className="fw-bold mb-3">
             Stock Management System
-          </h2>
+          </h4>
 
-          {/* ===== ITEM MANAGER ===== */}
+          {/* ITEM MANAGER */}
 
           {user?.role === "admin" && (
 
-            <div className="mb-5">
+            <div className="mb-4">
 
-              <div className="flex gap-2 mb-2">
+              <div className="d-flex gap-2 mb-2">
 
                 <input
                   placeholder="Item name"
                   value={newItem}
                   onChange={e => setNewItem(e.target.value)}
-                  className="border p-2 rounded flex-1"
+                  className="form-control"
                 />
 
                 <button
                   onClick={handleItemSave}
-                  className="bg-green-600 text-white px-4 rounded"
+                  className="btn btn-success"
                 >
                   {editItemIndex !== null ? "Update" : "Add"}
                 </button>
@@ -274,25 +234,25 @@ export default function Stock() {
 
               {items.map((i, idx) => (
 
-                <div key={idx} className="flex justify-between mb-1">
+                <div key={idx} className="d-flex justify-content-between mb-1">
 
                   <span>{i}</span>
 
-                  <div className="flex gap-2">
+                  <div className="d-flex gap-2">
 
                     <button
                       onClick={() => {
                         setNewItem(i);
                         setEditItemIndex(idx);
                       }}
-                      className="text-blue-600"
+                      className="btn btn-link p-0 text-primary"
                     >
                       Edit
                     </button>
 
                     <button
                       onClick={() => deleteItem(i)}
-                      className="text-red-600"
+                      className="btn btn-link p-0 text-danger"
                     >
                       Delete
                     </button>
@@ -307,158 +267,171 @@ export default function Stock() {
 
           )}
 
-          {/* ===== STOCK FORM ===== */}
+          {/* STOCK FORM */}
 
           {user?.role === "admin" && (
 
             <form
               onSubmit={handleSubmit}
-              className="grid md:grid-cols-4 gap-2 mb-4"
+              className="row g-2 mb-4"
             >
 
-              <select
-                value={item}
-                onChange={e => setItem(e.target.value)}
-                className="border p-2 rounded"
-                required
-              >
+              <div className="col-md-3">
+                <select
+                  value={item}
+                  onChange={e => setItem(e.target.value)}
+                  className="form-select"
+                  required
+                >
+                  <option value="">Select Item</option>
+                  {items.map((i, idx) => (
+                    <option key={idx}>{i}</option>
+                  ))}
+                </select>
+              </div>
 
-                <option value="">Select Item</option>
+              <div className="col-md-3">
+                <input
+                  type="number"
+                  placeholder="Quantity"
+                  value={quantity}
+                  onChange={e => setQuantity(e.target.value)}
+                  className="form-control"
+                  required
+                />
+              </div>
 
-                {items.map((i, idx) => (
-                  <option key={idx}>{i}</option>
-                ))}
+              <div className="col-md-3">
+                <select
+                  value={type}
+                  onChange={e => setType(e.target.value)}
+                  className="form-select"
+                >
+                  <option value="IN">Stock IN</option>
+                  <option value="OUT">Stock OUT</option>
+                </select>
+              </div>
 
-              </select>
-
-              <input
-                type="number"
-                placeholder="Quantity"
-                value={quantity}
-                onChange={e => setQuantity(e.target.value)}
-                className="border p-2 rounded"
-                required
-              />
-
-              <select
-                value={type}
-                onChange={e => setType(e.target.value)}
-                className="border p-2 rounded"
-              >
-                <option value="IN">Stock IN</option>
-                <option value="OUT">Stock OUT</option>
-              </select>
-
-              <button className="bg-black text-white rounded">
-                {editId ? "Update" : "Save"}
-              </button>
+              <div className="col-md-3">
+                <button className="btn btn-dark w-100">
+                  {editId ? "Update" : "Save"}
+                </button>
+              </div>
 
             </form>
 
           )}
 
-          {/* ===== EXPORT / PRINT ===== */}
+          {/* EXPORT / PRINT */}
 
-          <div className="flex gap-3 mb-3">
+          <div className="d-flex gap-2 mb-3">
 
             <button
               onClick={exportExcel}
-              className="bg-blue-600 text-white px-4 py-1 rounded"
+              className="btn btn-primary btn-sm"
             >
               Export Excel
             </button>
 
             <button
               onClick={printReport}
-              className="bg-gray-700 text-white px-4 py-1 rounded"
+              className="btn btn-secondary btn-sm"
             >
               Print
             </button>
 
           </div>
 
-          {/* ===== SEARCH ===== */}
+          {/* SEARCH */}
 
           <input
             placeholder="Search Item..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="border p-2 rounded mb-3 w-full"
+            className="form-control mb-3"
           />
 
-          {/* ===== TABLE ===== */}
+          {/* TABLE */}
 
-          <table className="w-full border text-sm">
+          <div className="table-responsive">
 
-            <thead className="bg-gray-200">
+            <table className="table table-bordered table-sm align-middle">
 
-              <tr>
-                <th className="border p-2">SR</th>
-                <th className="border p-2">Date</th>
-                <th className="border p-2">Item</th>
-                <th className="border p-2">Qty</th>
-                <th className="border p-2">Type</th>
+              <thead className="table-light">
 
-                {user?.role === "admin" && (
-                  <th className="border p-2">Action</th>
-                )}
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {filteredStock.map(s => (
-
-                <tr key={s.sr}>
-
-                  <td className="border p-2">{s.sr}</td>
-                  <td className="border p-2">{s.date}</td>
-                  <td className="border p-2">{s.item}</td>
-                  <td className="border p-2">{s.quantity}</td>
-                  <td className="border p-2">{s.type}</td>
+                <tr>
+                  <th>SR</th>
+                  <th>Date</th>
+                  <th>Item</th>
+                  <th>Qty</th>
+                  <th>Type</th>
 
                   {user?.role === "admin" && (
-
-                    <td className="border p-2">
-
-                      <button
-                        onClick={() => editStock(s)}
-                        className="text-blue-600 mr-2"
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        onClick={() => deleteStock(s.sr)}
-                        className="text-red-600"
-                      >
-                        Delete
-                      </button>
-
-                    </td>
-
+                    <th>Action</th>
                   )}
 
                 </tr>
 
-              ))}
+              </thead>
 
-            </tbody>
+              <tbody>
 
-          </table>
+                {filteredStock.map(s => (
 
-          {/* ===== REMAINING STOCK ===== */}
+                  <tr key={s.sr}>
 
-          <div className="grid md:grid-cols-4 gap-3 mt-5">
+                    <td>{s.sr}</td>
+                    <td>{s.date}</td>
+                    <td>{s.item}</td>
+                    <td>{s.quantity}</td>
+                    <td>{s.type}</td>
+
+                    {user?.role === "admin" && (
+
+                      <td>
+
+                        <button
+                          onClick={() => editStock(s)}
+                          className="btn btn-link p-0 text-primary me-2"
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          onClick={() => deleteStock(s.sr)}
+                          className="btn btn-link p-0 text-danger"
+                        >
+                          Delete
+                        </button>
+
+                      </td>
+
+                    )}
+
+                  </tr>
+
+                ))}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+          {/* REMAINING STOCK */}
+
+          <div className="row g-3 mt-3">
 
             {items.map((i, idx) => (
 
-              <div key={idx} className="bg-gray-100 p-3 rounded text-center">
+              <div key={idx} className="col-md-3">
 
-                <strong>{i}</strong>
-                <div>Remaining: {remainingStock[i]}</div>
+                <div className="card text-center p-3 bg-light">
+
+                  <strong>{i}</strong>
+                  <div>Remaining: {remainingStock[i]}</div>
+
+                </div>
 
               </div>
 

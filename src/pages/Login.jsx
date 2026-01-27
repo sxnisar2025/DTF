@@ -15,18 +15,14 @@ export default function Login() {
 
     // ADMIN LOGIN
     if (email === "admin@gmail.com" && password === "123456") {
-
       login({ email, role: "admin" });
       navigate("/dashboard");
-
     }
 
     // USER LOGIN
     else if (email === "user@gmail.com" && password === "123456") {
-
       login({ email, role: "user" });
       navigate("/local-order");
-
     }
 
     else {
@@ -36,21 +32,22 @@ export default function Login() {
 
   return (
 
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="d-flex align-items-center justify-content-center vh-100 bg-light">
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-8 rounded shadow w-96"
+        className="card p-4 shadow"
+        style={{ width: "24rem" }}
       >
 
-        <h2 className="text-2xl font-bold mb-4 text-center">
+        <h2 className="text-center fw-bold mb-4">
           Login
         </h2>
 
         <input
           type="email"
           placeholder="Email"
-          className="border p-2 w-full mb-3"
+          className="form-control mb-3"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -59,19 +56,19 @@ export default function Login() {
         <input
           type="password"
           placeholder="Password"
-          className="border p-2 w-full mb-4"
+          className="form-control mb-4"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
 
-        <button className="bg-black text-white w-full py-2 rounded">
+        <button className="btn btn-dark w-100">
           Login
         </button>
 
-        <div className="text-sm text-gray-500 mt-4">
-          Admin → admin@gmail.com / 123456 <br />
-          User → user@gmail.com / 123456
+        <div className="text-muted small mt-4">
+          <strong>Admin</strong> → admin@gmail.com / 123456 <br />
+          <strong>User</strong> → user@gmail.com / 123456
         </div>
 
       </form>

@@ -13,12 +13,12 @@ export default function AddDataForm({ onClose, onSave, editData, showOnlineField
     cost: 0,
     cash: "",
     transfer: "",
-    deposit: "",
     balance: 0,
     amount: 0,
     file: null,
   });
 
+  // Load edit data if available
   useEffect(() => {
     if (editData) {
       setForm({
@@ -31,7 +31,6 @@ export default function AddDataForm({ onClose, onSave, editData, showOnlineField
         cost: editData.total,
         cash: editData.cash,
         transfer: editData.transfer,
-        deposit: editData.deposit,
         balance: editData.balance,
         amount: editData.amount,
         file: editData.file || null,
@@ -39,16 +38,16 @@ export default function AddDataForm({ onClose, onSave, editData, showOnlineField
     }
   }, [editData]);
 
+  // Calculate cost, balance, and amount
   useEffect(() => {
     const size = Number(form.size || 0);
     const rate = Number(form.rate || 0);
     const cash = Number(form.cash || 0);
     const transfer = Number(form.transfer || 0);
-    const deposit = Number(form.deposit || 0);
     const cost = size * rate;
-    const totalPaid = cash + transfer + deposit;
+    const totalPaid = cash + transfer;
     setForm((prev) => ({ ...prev, cost, balance: cost - totalPaid, amount: totalPaid }));
-  }, [form.size, form.rate, form.cash, form.transfer, form.deposit]);
+  }, [form.size, form.rate, form.cash, form.transfer]);
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
@@ -67,7 +66,6 @@ export default function AddDataForm({ onClose, onSave, editData, showOnlineField
       total: form.cost,
       cash: Number(form.cash || 0),
       transfer: Number(form.transfer || 0),
-      deposit: Number(form.deposit || 0),
       balance: form.balance,
       amount: form.amount,
       file: form.file,
@@ -132,11 +130,6 @@ export default function AddDataForm({ onClose, onSave, editData, showOnlineField
           <div>
             <label className="text-sm font-medium">Transfer</label>
             <input name="transfer" type="number" value={form.transfer} onChange={handleChange} className="border p-2 rounded w-full" />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium">Deposit</label>
-            <input name="deposit" type="number" value={form.deposit} onChange={handleChange} className="border p-2 rounded w-full" />
           </div>
 
           <div>

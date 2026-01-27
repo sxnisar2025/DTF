@@ -13,7 +13,9 @@ export default function Record() {
 
   const [form, setForm] = useState({
     date: new Date().toLocaleDateString(),
+    mobile: "",
     customer: "",
+    type: "Local",
     size: "",
     rate: "",
     cost: 0,
@@ -25,7 +27,6 @@ export default function Record() {
   });
 
   const [search, setSearch] = useState("");
-  const [customerFilter, setCustomerFilter] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("");
   const [monthFilter, setMonthFilter] = useState("");
   const [fromDate, setFromDate] = useState("");
@@ -37,7 +38,7 @@ export default function Record() {
     setRows(stored);
   }, []);
 
-  // Calculate cost, balance, and amount
+  // Calculate cost, balance, amount
   useEffect(() => {
     const size = Number(form.size || 0);
     const rate = Number(form.rate || 0);
@@ -53,9 +54,8 @@ export default function Record() {
     return rows.filter((row) => {
       const searchMatch =
         row.customer?.toLowerCase().includes(search.toLowerCase()) ||
-        row.date?.includes(search);
-
-      const customerMatch = !customerFilter || row.customer === customerFilter;
+        row.date?.includes(search) ||
+        row.mobile?.includes(search);
 
       let paymentMatch = true;
       if (paymentFilter === "cash") paymentMatch = Number(row.cash) > 0;
@@ -73,12 +73,16 @@ export default function Record() {
       if (fromDate) dateMatch = rowDate >= new Date(fromDate);
       if (toDate) dateMatch = dateMatch && rowDate <= new Date(toDate);
 
-      return searchMatch && customerMatch && paymentMatch && monthMatch && dateMatch;
+      return searchMatch && paymentMatch && monthMatch && dateMatch;
     });
-  }, [rows, search, customerFilter, paymentFilter, monthFilter, fromDate, toDate]);
+  }, [rows, search, paymentFilter, monthFilter, fromDate, toDate]);
 
-  const totalAmount = useMemo(() => filteredRows.reduce((sum, row) => sum + Number(row.amount || 0), 0), [filteredRows]);
-  const totalCash = useMemo(() => filteredRows.reduce((sum, row) => sum + Number(row.cash || 0), 0), [filteredRows]);
+  // Total summary calculations
+  const totalSize = useMemo(() => filteredRows.reduce((sum, r) => sum + Number(r.size || 0), 0), [filteredRows]);
+  const totalCost = useMemo(() => filteredRows.reduce((sum, r) => sum + Number(r.cost || 0), 0), [filteredRows]);
+  const totalCash = useMemo(() => filteredRows.reduce((sum, r) => sum + Number(r.cash || 0), 0), [filteredRows]);
+  const totalTransfer = useMemo(() => filteredRows.reduce((sum, r) => sum + Number(r.transfer || 0), 0), [filteredRows]);
+  const totalBalance = useMemo(() => filteredRows.reduce((sum, r) => sum + Number(r.balance || 0), 0), [filteredRows]);
 
   // Export functions
   const exportExcel = () => {
@@ -100,26 +104,40 @@ export default function Record() {
     doc.text("Local Order Report", 14, 10);
     doc.autoTable({
       startY: 20,
-      head: [["#", "Date", "Customer", "Size", "Rate", "Cost", "Cash", "Transfer", "Balance", "Amount"]],
-      body: filteredRows.map((r, i) => [i + 1, r.date, r.customer, r.size, r.rate, r.total, r.cash, r.transfer, r.balance, r.amount]),
+      head: [["#", "Date", "Mobile", "Customer", "Type", "Size", "Rate", "Cost", "Cash", "Transfer", "Balance", "Amount"]],
+      body: filteredRows.map((r, i) => [i + 1, r.date, r.mobile, r.customer, r.type, r.size, r.rate, r.cost, r.cash, r.transfer, r.balance, r.amount]),
     });
     doc.save("local-orders.pdf");
   };
 
   const printTable = () => window.print();
 
+  // Form change
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
     setForm((prev) => ({ ...prev, [name]: type === "file" ? files[0] : value }));
   };
 
+  // Validation for mobile
+  const isMobileValid = (mobile) => {
+    const regex = /^03\d{9}$/;
+    return regex.test(mobile);
+  };
+
   const handleSave = (e) => {
     e.preventDefault();
+
+    if (!form.mobile || !isMobileValid(form.mobile)) {
+      return alert("Mobile number is required, must start with 03 and have 11 digits.");
+    }
+
+    // Check uniqueness
+    const duplicate = rows.some((r, i) => r.mobile === form.mobile && i !== editIndex);
+    if (duplicate) return alert("Mobile number must be unique.");
+
     let updated;
-    const newData = {
-      id: editIndex !== null ? rows[editIndex].id : Date.now(),
-      ...form,
-    };
+    const newData = { id: editIndex !== null ? rows[editIndex].id : Date.now(), ...form };
+
     if (editIndex !== null) {
       updated = [...rows];
       updated[editIndex] = newData;
@@ -127,12 +145,15 @@ export default function Record() {
     } else {
       updated = [...rows, newData];
     }
+
     setRows(updated);
     localStorage.setItem("records", JSON.stringify(updated));
     setShowModal(false);
     setForm({
       date: new Date().toLocaleDateString(),
+      mobile: "",
       customer: "",
+      type: "Local",
       size: "",
       rate: "",
       cost: 0,
@@ -162,8 +183,27 @@ export default function Record() {
       <Header />
 
       <main className="container-fluid flex-fill p-4">
-        <div className="card p-4 shadow">
-          {/* Header */}
+        <div className="card p-4 shadow mb-3">
+          {/* Cards */}
+          <div className="row text-center g-3 mb-4">
+            <div className="col-md">
+              <div className="card bg-primary text-white p-3">Total Size<br /><strong>{totalSize}</strong></div>
+            </div>
+            <div className="col-md">
+              <div className="card bg-success text-white p-3">Total Cost<br /><strong>{totalCost}</strong></div>
+            </div>
+            <div className="col-md">
+              <div className="card bg-warning text-dark p-3">Total Cash<br /><strong>{totalCash}</strong></div>
+            </div>
+            <div className="col-md">
+              <div className="card bg-info text-white p-3">Total Transfer<br /><strong>{totalTransfer}</strong></div>
+            </div>
+            <div className="col-md">
+              <div className="card bg-danger text-white p-3">Total Balance<br /><strong>{totalBalance}</strong></div>
+            </div>
+          </div>
+
+          {/* Header buttons */}
           <div className="d-flex flex-wrap justify-content-between gap-3 mb-3">
             <h3 className="fw-bold">Local Order</h3>
             <div className="d-flex flex-wrap gap-2">
@@ -179,14 +219,6 @@ export default function Record() {
           <div className="row g-2 mb-3">
             <div className="col-md">
               <input type="text" placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="form-control" />
-            </div>
-            <div className="col-md">
-              <select value={customerFilter} onChange={(e) => setCustomerFilter(e.target.value)} className="form-select">
-                <option value="">All Customers</option>
-                <option value="Zain">Zain</option>
-                <option value="Noman">Noman</option>
-                <option value="Irfan">Irfan</option>
-              </select>
             </div>
             <div className="col-md">
               <select value={paymentFilter} onChange={(e) => setPaymentFilter(e.target.value)} className="form-select">
@@ -217,27 +249,29 @@ export default function Record() {
             <table className="table table-bordered table-sm align-middle">
               <thead className="table-light">
                 <tr>
-                  {["#", "Date", "Customer", "Size", "Rate", "Cost", "Cash", "Transfer", "Balance", "Amount", "Action"].map(h => <th key={h}>{h}</th>)}
+                  {["#", "Date", "Mobile", "Customer", "Type", "Size", "Rate", "Cost", "Cash", "Transfer", "Balance", "Amount", "Action"].map(h => <th key={h}>{h}</th>)}
                 </tr>
               </thead>
               <tbody>
                 {filteredRows.length === 0 ? (
                   <tr>
-                    <td colSpan="11" className="text-center py-4">No data found</td>
+                    <td colSpan="13" className="text-center py-4">No data found</td>
                   </tr>
                 ) : (
                   filteredRows.map((r, i) => (
                     <tr key={i}>
                       <td>{i + 1}</td>
                       <td>{r.date}</td>
+                      <td>{r.mobile}</td>
                       <td>{r.customer}</td>
+                      <td>{r.type}</td>
                       <td>{r.size}</td>
                       <td>{r.rate}</td>
-                      <td>{r.total}</td>
+                      <td>{r.cost}</td>
                       <td>{r.cash}</td>
                       <td>{r.transfer}</td>
                       <td>{r.balance}</td>
-                      <td className="fw-bold">{r.amount}</td>
+                      <td>{r.amount}</td>
                       <td>
                         <div className="d-flex gap-2">
                           <button onClick={() => handleEdit(i)} className="btn btn-link p-0 text-primary">Edit</button>
@@ -250,14 +284,8 @@ export default function Record() {
               </tbody>
               <tfoot className="table-light fw-bold">
                 <tr>
-                  <td colSpan="9" className="text-end">Total Cash Received</td>
-                  <td>{totalCash}</td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td colSpan="9" className="text-end">Total Amount</td>
-                  <td>{totalAmount}</td>
-                  <td></td>
+                  <td colSpan="12" className="text-end">Total Amount</td>
+                  <td>{filteredRows.reduce((sum, r) => sum + Number(r.amount || 0), 0)}</td>
                 </tr>
               </tfoot>
             </table>
@@ -267,7 +295,7 @@ export default function Record() {
 
       <Footer />
 
-      {/* ================= MODAL ================= */}
+      {/* Modal */}
       {showModal && (
         <div className="modal d-block" tabIndex="-1" role="dialog">
           <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
@@ -275,7 +303,7 @@ export default function Record() {
               <form onSubmit={handleSave}>
                 <div className="modal-header">
                   <h5 className="modal-title">{editIndex !== null ? "Edit Record" : "Add Record"}</h5>
-                  <button type="button" className="btn-close" onClick={() => { setShowModal(false); setEditIndex(null); setForm({ date: new Date().toLocaleDateString(), customer: "", size: "", rate: "", cost: 0, cash: "", transfer: "", balance: 0, amount: 0, file: null }); }}></button>
+                  <button type="button" className="btn-close" onClick={() => { setShowModal(false); setEditIndex(null); }}></button>
                 </div>
                 <div className="modal-body">
                   <div className="row g-3">
@@ -284,12 +312,18 @@ export default function Record() {
                       <input type="text" className="form-control" value={form.date} readOnly />
                     </div>
                     <div className="col-md-6">
+                      <label>Mobile</label>
+                      <input type="text" className="form-control" name="mobile" value={form.mobile} onChange={handleChange} required />
+                    </div>
+                    <div className="col-md-6">
                       <label>Customer</label>
-                      <select className="form-select" name="customer" value={form.customer} onChange={handleChange} required>
-                        <option value="">Select Customer</option>
-                        <option value="Zain">Zain</option>
-                        <option value="Noman">Noman</option>
-                        <option value="Irfan">Irfan</option>
+                      <input type="text" className="form-control" name="customer" value={form.customer} onChange={handleChange} required />
+                    </div>
+                    <div className="col-md-6">
+                      <label>Type</label>
+                      <select className="form-select" name="type" value={form.type} onChange={handleChange}>
+                        <option value="Local">Local</option>
+                        <option value="Online">Online</option>
                       </select>
                     </div>
                     <div className="col-md-6">
@@ -327,7 +361,7 @@ export default function Record() {
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={() => { setShowModal(false); setEditIndex(null); setForm({ date: new Date().toLocaleDateString(), customer: "", size: "", rate: "", cost: 0, cash: "", transfer: "", balance: 0, amount: 0, file: null }); }}>Cancel</button>
+                  <button type="button" className="btn btn-secondary" onClick={() => { setShowModal(false); setEditIndex(null); }}>Cancel</button>
                   <button type="submit" className="btn btn-dark">{editIndex !== null ? "Update" : "Save"}</button>
                 </div>
               </form>

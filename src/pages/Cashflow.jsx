@@ -9,8 +9,9 @@ export default function Cashflow() {
   const [paid, setPaid] = useState("");
   const [note, setNote] = useState("");
   const [cashflow, setCashflow] = useState([]);
-  const [actualAmount, setActualAmount] = useState(0);
   const [monthFilter, setMonthFilter] = useState("");
+  const [records, setRecords] = useState([]);
+  const [editId, setEditId] = useState(null); // For edit mode
 
   // ================= FORMAT MONEY =================
   const money = (n) => Number(n).toLocaleString();
@@ -20,37 +21,39 @@ export default function Cashflow() {
     const storedCashflow = JSON.parse(localStorage.getItem("cashflow")) || [];
     setCashflow(storedCashflow);
 
-    const cash = JSON.parse(localStorage.getItem("totalCash")) || 0;
-    setActualAmount(cash);
+    const storedRecords = JSON.parse(localStorage.getItem("records")) || [];
+    setRecords(storedRecords);
   }, []);
 
-  // ================= LIVE CASH SYNC =================
-  useEffect(() => {
-    const syncCash = () => {
-      const cash = JSON.parse(localStorage.getItem("totalCash")) || 0;
-      setActualAmount(cash);
-    };
-    window.addEventListener("storage", syncCash);
-    return () => window.removeEventListener("storage", syncCash);
-  }, []);
-
-  // ================= ADD PAYMENT =================
-  const addPayment = () => {
+  // ================= ADD / EDIT PAYMENT =================
+  const handleSave = () => {
     if (user?.role !== "admin") return;
     if (!paid) return alert("Enter amount");
-    if (Number(paid) > actualAmount) return alert("Payment exceeds available cash");
 
-    const newRow = {
-      id: Date.now(),
-      date: new Date().toISOString().slice(0, 10),
-      month: new Date().getMonth() + 1,
-      paid: Number(paid),
-      note: note || "General Expense",
-    };
+    const totalCash = records.reduce((sum, r) => sum + Number(r.cash || 0), 0);
+    if (Number(paid) > totalCash) return alert("Payment exceeds available cash");
 
-    const updated = [...cashflow, newRow];
-    setCashflow(updated);
-    localStorage.setItem("cashflow", JSON.stringify(updated));
+    if (editId) {
+      // Edit existing
+      const updated = cashflow.map((p) =>
+        p.id === editId ? { ...p, paid: Number(paid), note: note || "Owais Clear Amount" } : p
+      );
+      setCashflow(updated);
+      localStorage.setItem("cashflow", JSON.stringify(updated));
+      setEditId(null);
+    } else {
+      // Add new
+      const newRow = {
+        id: Date.now(),
+        date: new Date().toISOString().slice(0, 10),
+        month: new Date().getMonth() + 1,
+        paid: Number(paid),
+        note: note || "Owais Clear Amount",
+      };
+      const updated = [...cashflow, newRow];
+      setCashflow(updated);
+      localStorage.setItem("cashflow", JSON.stringify(updated));
+    }
 
     setPaid("");
     setNote("");
@@ -66,19 +69,23 @@ export default function Cashflow() {
     localStorage.setItem("cashflow", JSON.stringify(updated));
   };
 
+  // ================= EDIT PAYMENT =================
+  const editPayment = (row) => {
+    setPaid(row.paid);
+    setNote(row.note);
+    setEditId(row.id);
+  };
+
   // ================= FILTER =================
   const filtered = useMemo(() => {
     if (!monthFilter) return cashflow;
     return cashflow.filter((row) => row.month === Number(monthFilter));
   }, [cashflow, monthFilter]);
 
-  // ================= TOTAL PAID =================
-  const totalPaid = useMemo(() => {
-    return filtered.reduce((sum, row) => sum + Number(row.paid), 0);
-  }, [filtered]);
-
-  // ================= BALANCE =================
-  const balance = actualAmount - totalPaid;
+  // ================= TOTALS =================
+  const totalCashAmount = useMemo(() => records.reduce((sum, r) => sum + Number(r.cash || 0), 0), [records]);
+  const totalPaidAmount = useMemo(() => filtered.reduce((sum, r) => sum + Number(r.paid), 0), [filtered]);
+  const totalBalanceAmount = totalCashAmount - totalPaidAmount;
 
   // ================= UI =================
   return (
@@ -104,15 +111,15 @@ export default function Cashflow() {
                 </div>
                 <div className="col-md">
                   <input
-                    placeholder="Payment Note (Rent / Salary / Ink etc)"
+                    placeholder="Payment Note "
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     className="form-control"
                   />
                 </div>
                 <div className="col-md-auto">
-                  <button onClick={addPayment} className="btn btn-dark w-100">
-                    Submit Payment
+                  <button onClick={handleSave} className="btn btn-dark w-100">
+                    {editId ? "Update Payment" : "Submit Payment"}
                   </button>
                 </div>
               </div>
@@ -132,6 +139,28 @@ export default function Cashflow() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* ================= SUMMARY CARDS ================= */}
+            <div className="row g-3 mb-4 text-center">
+              <div className="col-md">
+                <div className="card bg-primary text-white p-3">
+                  Total Cash Amount<br />
+                  <strong>{money(totalCashAmount)}</strong>
+                </div>
+              </div>
+              <div className="col-md">
+                <div className="card bg-success text-white p-3">
+                  Total Paid Amount<br />
+                  <strong>{money(totalPaidAmount)}</strong>
+                </div>
+              </div>
+              <div className="col-md">
+                <div className="card bg-danger text-white p-3">
+                  Total Balance Amount<br />
+                  <strong>{money(totalBalanceAmount)}</strong>
+                </div>
+              </div>
             </div>
 
             {/* ================= TABLE ================= */}
@@ -160,12 +189,20 @@ export default function Cashflow() {
                         <td>{row.note}</td>
                         {user?.role === "admin" && (
                           <td>
-                            <button
-                              onClick={() => deletePayment(row.id)}
-                              className="btn btn-sm btn-outline-danger"
-                            >
-                              Delete
-                            </button>
+                            <div className="d-flex gap-2">
+                              <button
+                                onClick={() => editPayment(row)}
+                                className="btn btn-sm btn-outline-primary"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => deletePayment(row.id)}
+                                className="btn btn-sm btn-outline-danger"
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </td>
                         )}
                       </tr>
@@ -173,24 +210,6 @@ export default function Cashflow() {
                   )}
                 </tbody>
               </table>
-            </div>
-
-            {/* ================= SUMMARY ================= */}
-            <div className="mt-4">
-              <div className="d-flex justify-content-between mb-2">
-                <span>Actual Cash (From Orders):</span>
-                <span className="text-success">{money(actualAmount)}</span>
-              </div>
-              <div className="d-flex justify-content-between mb-2">
-                <span>Total Paid:</span>
-                <span className="text-danger">{money(totalPaid)}</span>
-              </div>
-              <div className="d-flex justify-content-between mb-2">
-                <span>Balance:</span>
-                <span className={balance < 0 ? "text-danger" : "text-primary"}>
-                  {money(balance)}
-                </span>
-              </div>
             </div>
           </div>
         </div>

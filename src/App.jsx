@@ -1,25 +1,28 @@
-import React, { useEffect } from "react"; // ✅ import hooks
+import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Record from "./pages/Record";
-
 import Stock from "./pages/Stock";
-import ProtectedRoute from "./components/ProtectedRoute";
-import { AuthProvider } from "./context/AuthContext";
 import Customers from "./pages/Customers";
 import Cashflow from "./pages/Cashflow";
-// ✅ Dummy Data
+import Order from "./pages/Order"; // ✅ NEW PAGE
+
+import ProtectedRoute from "./components/ProtectedRoute";
+import { AuthProvider } from "./context/AuthContext";
+
+// Dummy Data
 import { recordData, onlineOrdersData } from "./data/dummyData";
 
 export default function App() {
 
-  // ✅ Initialize localStorage with dummy data
+  // Initialize LocalStorage Dummy Data
   useEffect(() => {
     if (!localStorage.getItem("records")) {
       localStorage.setItem("records", JSON.stringify(recordData));
     }
+
     if (!localStorage.getItem("onlineOrders")) {
       localStorage.setItem("onlineOrders", JSON.stringify(onlineOrdersData));
     }
@@ -27,16 +30,19 @@ export default function App() {
 
   return (
     <AuthProvider>
+
       <BrowserRouter>
+
         <Routes>
 
-          {/* Default redirect */}
+          {/* Default Redirect */}
           <Route path="/" element={<Navigate to="/login" replace />} />
 
           {/* Login */}
           <Route path="/login" element={<Login />} />
 
-          {/* Protected Pages */}
+          {/* Protected Routes */}
+
           <Route
             path="/dashboard"
             element={
@@ -45,7 +51,16 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-<Route path="/customers" element={<Customers />} />
+
+          <Route
+            path="/customers"
+            element={
+              <ProtectedRoute>
+                <Customers />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/local-order"
             element={
@@ -55,7 +70,15 @@ export default function App() {
             }
           />
 
-          
+          {/* ✅ NEW ORDER ROUTE */}
+          <Route
+            path="/order"
+            element={
+              <ProtectedRoute>
+                <Order />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/stock"
@@ -65,10 +88,20 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/cashflow" element={<Cashflow />} />
+
+          <Route
+            path="/cashflow"
+            element={
+              <ProtectedRoute>
+                <Cashflow />
+              </ProtectedRoute>
+            }
+          />
 
         </Routes>
+
       </BrowserRouter>
+
     </AuthProvider>
   );
 }

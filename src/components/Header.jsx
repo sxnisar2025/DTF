@@ -45,6 +45,10 @@ export default function Header() {
               Local Order
             </Link>
           </li>
+          <Link className={linkClass("/order")}  to="/order">
+  Orders
+</Link>
+
           <li className="nav-item">
             <Link className={linkClass("/stock")} to="/stock">
               Stock

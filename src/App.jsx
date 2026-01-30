@@ -7,7 +7,9 @@ import Record from "./pages/Record";
 import Stock from "./pages/Stock";
 import Customers from "./pages/Customers";
 import Cashflow from "./pages/Cashflow";
-import Order from "./pages/Order"; // ✅ NEW PAGE
+import Order from "./pages/Order"; 
+import Payment from "./pages/Payment";
+
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
@@ -79,6 +81,14 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+  path="/payment"
+  element={
+    <ProtectedRoute>
+      <Payment />
+    </ProtectedRoute>
+  }
+/>
 
           <Route
             path="/stock"

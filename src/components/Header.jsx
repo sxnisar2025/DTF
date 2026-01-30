@@ -48,6 +48,9 @@ export default function Header() {
           <Link className={linkClass("/order")}  to="/order">
   Orders
 </Link>
+   <Link className={linkClass("/payment")}  to="/payment">
+  Payment
+</Link>
 
           <li className="nav-item">
             <Link className={linkClass("/stock")} to="/stock">

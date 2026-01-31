@@ -22,7 +22,7 @@ export default function Login() {
     // USER LOGIN
     else if (email === "user@gmail.com" && password === "123456") {
       login({ email, role: "user" });
-      navigate("/local-order");
+      navigate("/order");
     }
 
     else {

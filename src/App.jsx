@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import Record from "./pages/Record";
+
 import Stock from "./pages/Stock";
 import Customers from "./pages/Customers";
 import Cashflow from "./pages/Cashflow";
@@ -64,14 +64,7 @@ export default function App() {
             }
           />
 
-          <Route
-            path="/local-order"
-            element={
-              <ProtectedRoute>
-                <Record />
-              </ProtectedRoute>
-            }
-          />
+       
 
           {/* ✅ NEW ORDER ROUTE */}
           <Route

@@ -52,6 +52,10 @@ export default function Header() {
   Payment
 </Link>
 
+   <Link className={linkClass("/invoice")}  to="/invoice">
+  Invoice
+</Link>
+
           <li className="nav-item">
             <Link className={linkClass("/stock")} to="/stock">
               Stock

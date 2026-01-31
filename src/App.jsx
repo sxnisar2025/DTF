@@ -7,8 +7,9 @@ import Record from "./pages/Record";
 import Stock from "./pages/Stock";
 import Customers from "./pages/Customers";
 import Cashflow from "./pages/Cashflow";
-import Order from "./pages/Order"; 
+import Order from "./pages/Order";
 import Payment from "./pages/Payment";
+import Invoice from "./pages/Invoice";
 
 
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -82,13 +83,23 @@ export default function App() {
             }
           />
           <Route
-  path="/payment"
-  element={
-    <ProtectedRoute>
-      <Payment />
-    </ProtectedRoute>
-  }
-/>
+            path="/payment"
+            element={
+              <ProtectedRoute>
+                <Payment />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/invoice"
+            element={
+              <ProtectedRoute>
+                <Invoice />
+              </ProtectedRoute>
+            }
+          />
+
+
 
           <Route
             path="/stock"

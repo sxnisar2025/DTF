@@ -89,17 +89,17 @@ export default function Order() {
   // ================= ID GENERATOR =================
 
   const generateOrderId = () => {
-  if (orders.length === 0) return "DTF-001";
+    if (orders.length === 0) return "DTF-001";
 
-  // Extract numbers from IDs like "DTF-004"
-  const numbers = orders.map(o => Number(o.id.split("-")[1]));
+    // Extract numbers from IDs like "DTF-004"
+    const numbers = orders.map(o => Number(o.id.split("-")[1]));
 
-  const maxNumber = Math.max(...numbers);
+    const maxNumber = Math.max(...numbers);
 
-  const nextNumber = maxNumber + 1;
+    const nextNumber = maxNumber + 1;
 
-  return `DTF-${String(nextNumber).padStart(3, "0")}`;
-};
+    return `DTF-${String(nextNumber).padStart(3, "0")}`;
+  };
 
 
   // ================= FILTER =================
@@ -139,26 +139,24 @@ export default function Order() {
 
   // ================= FORM =================
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+ const handleChange = (e) => {
+  const { name, value } = e.target;
 
-    if (name === "phone") {
-      // Remove non-digit characters
-      let digitsOnly = value.replace(/\D/g, "");
+  if (name === "phone") {
+    // Ensure it always starts with 03
+    let digitsOnly = value.replace(/\D/g, "");
+    if (!digitsOnly.startsWith("03")) digitsOnly = "03";
 
-      // Limit to 11 digits
-      if (digitsOnly.length > 11) digitsOnly = digitsOnly.slice(0, 11);
+    // Limit to 11 digits
+    if (digitsOnly.length > 11) digitsOnly = digitsOnly.slice(0, 11);
 
-      // Optionally enforce first two digits as "03"
-      if (digitsOnly.length === 1 && digitsOnly !== "0") digitsOnly = "0";
-      if (digitsOnly.length === 2 && digitsOnly !== "03") digitsOnly = "03";
+    setForm(prev => ({ ...prev, [name]: digitsOnly }));
+    return;
+  }
 
-      setForm(prev => ({ ...prev, [name]: digitsOnly }));
-      return;
-    }
+  setForm(prev => ({ ...prev, [name]: value }));
+};
 
-    setForm(prev => ({ ...prev, [name]: value }));
-  };
 
 
 
@@ -213,7 +211,7 @@ export default function Order() {
       id: "",
       dateTime: "",
       userName: "",
-      phone: "",
+      phone: "03", // <-- start with 03
       city: "",
       address: "",
       orderType: "Local",
@@ -421,54 +419,48 @@ export default function Order() {
               </thead>
 
               <tbody>
-
                 {filteredOrders.map((o, i) => (
+  <tr key={i}>
+    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{i + 1}</td>
+    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.id}</td>
+    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.dateTime}</td>
+    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.userName}</td>
+    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.phone}</td>
+    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.city}</td>
+    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.address}</td>
+    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.orderType}</td>
+    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.itemSize}</td>
+    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.itemRate}</td>
+    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.totalCost}</td>
+    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>
+      <span
+        className={`badge ${o.status === "Closed" ? "bg-success" : "bg-warning text-dark"}`}
+      >
+        {o.status}
+      </span>
+    </td>
+    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>
+      <div className="d-flex gap-2">
+        <button
+          disabled={o.status === "Closed"}
+          onClick={() => handleEdit(i)}
+          className="btn btn-sm btn-outline-primary"
+        >
+          Edit
+        </button>
+        <button
+          disabled={o.status === "Closed"}
+          onClick={() => handleDelete(i)}
+          className="btn btn-sm btn-outline-danger"
+        >
+          Delete
+        </button>
+      </div>
+    </td>
+  </tr>
+))}
 
-                  <tr key={i}>
 
-                    <td>{i + 1}</td>
-                    <td>{o.id}</td>
-                    <td>{o.dateTime}</td>
-                    <td>{o.userName}</td>
-                    <td>{o.phone}</td>
-                    <td>{o.city}</td>
-                    <td>{o.address}</td>
-                    <td>{o.orderType}</td>
-                    <td>{o.itemSize}</td>
-                    <td>{o.itemRate}</td>
-                    <td>{o.totalCost}</td>
-
-                    <td>
-                      <span className={`badge ${o.status === "Closed" ? "bg-success" : "bg-warning text-dark"}`}>
-                        {o.status}
-                      </span>
-                    </td>
-
-                    <td>
-                      <div className="d-flex gap-2">
-
-                        <button
-                          disabled={o.status === "Closed"}
-                          onClick={() => handleEdit(i)}
-                          className="btn btn-sm btn-outline-primary"
-                        >
-                          Edit
-                        </button>
-
-                        <button
-                          disabled={o.status === "Closed"}
-                          onClick={() => handleDelete(i)}
-                          className="btn btn-sm btn-outline-danger"
-                        >
-                          Delete
-                        </button>
-
-                      </div>
-                    </td>
-
-                  </tr>
-
-                ))}
 
               </tbody>
 
@@ -559,7 +551,12 @@ export default function Order() {
 
                     <div className="col-md-6">
                       <label>Total Cost</label>
-                      <input className="form-control" value={form.totalCost} readOnly />
+                      <input
+  className="form-control"
+  value={form.totalCost}
+  readOnly
+  style={{ backgroundColor: "#f5f5f5" }}
+/>
                     </div>
 
                   </div>

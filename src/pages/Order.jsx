@@ -89,9 +89,18 @@ export default function Order() {
   // ================= ID GENERATOR =================
 
   const generateOrderId = () => {
-    const next = orders.length + 1;
-    return `DTF-${String(next).padStart(3, "0")}`;
-  };
+  if (orders.length === 0) return "DTF-001";
+
+  // Extract numbers from IDs like "DTF-004"
+  const numbers = orders.map(o => Number(o.id.split("-")[1]));
+
+  const maxNumber = Math.max(...numbers);
+
+  const nextNumber = maxNumber + 1;
+
+  return `DTF-${String(nextNumber).padStart(3, "0")}`;
+};
+
 
   // ================= FILTER =================
 
@@ -132,8 +141,26 @@ export default function Order() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "phone") {
+      // Remove non-digit characters
+      let digitsOnly = value.replace(/\D/g, "");
+
+      // Limit to 11 digits
+      if (digitsOnly.length > 11) digitsOnly = digitsOnly.slice(0, 11);
+
+      // Optionally enforce first two digits as "03"
+      if (digitsOnly.length === 1 && digitsOnly !== "0") digitsOnly = "0";
+      if (digitsOnly.length === 2 && digitsOnly !== "03") digitsOnly = "03";
+
+      setForm(prev => ({ ...prev, [name]: digitsOnly }));
+      return;
+    }
+
     setForm(prev => ({ ...prev, [name]: value }));
   };
+
+
 
   // ================= SAVE =================
 
@@ -141,10 +168,18 @@ export default function Order() {
 
     e.preventDefault();
 
+
+
     if (!form.userName || !form.phone || !form.itemSize || !form.itemRate) {
       alert("Fill all required fields");
       return;
     }
+
+    if (!/^03\d{9}$/.test(form.phone)) {
+      alert("Phone must be in the format 03XXXXXXXXX (11 digits)");
+      return;
+    }
+
 
     const payload = {
       ...form,
@@ -483,7 +518,15 @@ export default function Order() {
 
                     <div className="col-md-6">
                       <label>Phone *</label>
-                      <input className="form-control" name="phone" value={form.phone} onChange={handleChange} required />
+                      <input
+                        className="form-control"
+                        name="phone"
+                        value={form.phone}
+                        onChange={handleChange}
+                        placeholder="03XXXXXXXXX"
+                        required
+                      />
+
                     </div>
 
                     <div className="col-md-6">

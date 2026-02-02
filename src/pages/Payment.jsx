@@ -5,6 +5,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 
+
 export default function Payment() {
 
   // ================= STATES =================
@@ -20,6 +21,22 @@ export default function Payment() {
   const [cash, setCash] = useState("");
   const [transfer, setTransfer] = useState("");
   const [file, setFile] = useState(null);
+
+  const [typeFilter, setTypeFilter] = useState(""); // Cash / Transfer / Balance
+  const [statusFilter, setStatusFilter] = useState(""); // InProgress / Closed
+  const [monthFilter, setMonthFilter] = useState(""); // YYYY-MM
+  const [dateFilter, setDateFilter] = useState(""); // YYYY-MM-DD
+
+
+  const paidNow = useMemo(() => {
+    return Number(cash || 0) + Number(transfer || 0);
+  }, [cash, transfer]);
+
+  const remainingBalance = useMemo(() => {
+    if (!selectedOrder) return 0;
+    return Number(selectedOrder.balance) - paidNow;
+  }, [selectedOrder, paidNow]);
+
 
   // ================= LOAD DATA =================
 
@@ -62,15 +79,37 @@ export default function Payment() {
 
   // ================= FILTER =================
 
+  // ================= FILTER DATA =================
   const filteredData = useMemo(() => {
 
-    return mergedData.filter(o =>
-      o.userName.toLowerCase().includes(search.toLowerCase()) ||
-      o.phone.includes(search) ||
-      o.id.includes(search)
-    );
+    return mergedData.filter(o => {
 
-  }, [mergedData, search]);
+      const searchMatch =
+        o.userName.toLowerCase().includes(search.toLowerCase()) ||
+        o.phone.includes(search) ||
+        o.id.includes(search);
+
+      const statusMatch =
+        !statusFilter || (statusFilter === "Closed" ? o.balance === 0 : o.balance > 0);
+
+      const typeMatch =
+        !typeFilter ||
+        (typeFilter === "Cash" && o.cash > 0) ||
+        (typeFilter === "Transfer" && o.transfer > 0) ||
+        (typeFilter === "Balance" && o.balance > 0);
+
+      const monthMatch =
+        !monthFilter || (o.paymentDate && o.paymentDate.startsWith(monthFilter));
+
+      const dateMatch =
+        !dateFilter || (o.paymentDate && o.paymentDate === dateFilter);
+
+      return searchMatch && statusMatch && typeMatch && monthMatch && dateMatch;
+
+    });
+
+  }, [mergedData, search, statusFilter, typeFilter, monthFilter, dateFilter]);
+
 
   // ================= SUMMARY =================
 
@@ -82,21 +121,40 @@ export default function Payment() {
 
   // ================= SAVE PAYMENT =================
 
-  const handleSavePayment = () => {
+ const handleSavePayment = () => {
 
-    const paidAmount = Number(cash) + Number(transfer);
+  const paidAmount = Number(cash) + Number(transfer);
 
-    if (paidAmount <= 0) {
-      alert("Enter payment amount");
-      return;
-    }
+  if (paidAmount <= 0) {
+    alert("Enter payment amount");
+    return;
+  }
 
-    if (paidAmount > selectedOrder.totalCost) {
-      alert("Payment exceeds total cost");
-      return;
-    }
+  if (paidAmount > selectedOrder.balance) {
+    alert("Payment exceeds remaining balance");
+    return;
+  }
 
-    const newPayment = {
+  // Find existing payment record
+  const existingPayment = payments.find(p => p.id === selectedOrder.id);
+
+  let updatedPayment;
+
+  if (existingPayment) {
+
+    // ADD new payment to old payment
+    updatedPayment = {
+      ...existingPayment,
+      cash: Number(existingPayment.cash) + Number(cash),
+      transfer: Number(existingPayment.transfer) + Number(transfer),
+      file: file ? file.name : existingPayment.file,
+      date: new Date().toLocaleString()
+    };
+
+  } else {
+
+    // First payment
+    updatedPayment = {
       id: selectedOrder.id,
       cash: Number(cash),
       transfer: Number(transfer),
@@ -104,14 +162,17 @@ export default function Payment() {
       date: new Date().toLocaleString()
     };
 
-    const updated = payments.filter(p => p.id !== selectedOrder.id);
-    updated.push(newPayment);
+  }
 
-    setPayments(updated);
-    localStorage.setItem("payments", JSON.stringify(updated));
+  const updatedList = payments.filter(p => p.id !== selectedOrder.id);
+  updatedList.push(updatedPayment);
 
-    resetModal();
-  };
+  setPayments(updatedList);
+  localStorage.setItem("payments", JSON.stringify(updatedList));
+
+  resetModal();
+};
+
 
   const resetModal = () => {
 
@@ -235,12 +296,61 @@ export default function Payment() {
 
         {/* SEARCH */}
 
-        <input
-          className="form-control mb-3"
-          placeholder="Search by Name / Phone / ID"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
+        <div className="row g-2 mb-3">
+
+          <div className="col-md-3">
+            <input
+              className="form-control"
+              placeholder="Search by Name / Phone / ID"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+
+          <div className="col-md-2">
+            <select
+              className="form-select"
+              value={typeFilter}
+              onChange={e => setTypeFilter(e.target.value)}
+            >
+              <option value="">All Types</option>
+              <option value="Cash">Cash</option>
+              <option value="Transfer">Transfer</option>
+              <option value="Balance">Balance</option>
+            </select>
+          </div>
+
+          <div className="col-md-2">
+            <select
+              className="form-select"
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+            >
+              <option value="">All Status</option>
+              <option value="InProgress">InProgress</option>
+              <option value="Closed">Closed</option>
+            </select>
+          </div>
+
+          <div className="col-md-2">
+            <input
+              type="month"
+              className="form-control"
+              value={monthFilter}
+              onChange={e => setMonthFilter(e.target.value)}
+            />
+          </div>
+
+          <div className="col-md-2">
+            <input
+              type="date"
+              className="form-control"
+              value={dateFilter}
+              onChange={e => setDateFilter(e.target.value)}
+            />
+          </div>
+
+        </div>
 
         {/* TABLE */}
 
@@ -259,8 +369,7 @@ export default function Payment() {
                   <th>Date</th>
                   <th>User</th>
                   <th>Phone</th>
-                  <th>Size</th>
-                  <th>Rate</th>
+                 
                   <th>Cost</th>
                   <th>Cash</th>
                   <th>Transfer</th>
@@ -274,41 +383,41 @@ export default function Payment() {
               <tbody>
 
                 {filteredData.map((o, i) => (
-
-                  <tr key={i}>
-
+                  <tr
+                    key={i}
+                    className={o.balance === 0 ? "table-success" : ""} // Bootstrap class for light green
+                  >
                     <td>{i + 1}</td>
                     <td>{o.id}</td>
                     <td>{o.paymentDate || o.dateTime}</td>
                     <td>{o.userName}</td>
                     <td>{o.phone}</td>
-                    <td>{o.itemSize}</td>
-                    <td>{o.itemRate}</td>
+                    
                     <td>{o.totalCost}</td>
                     <td>{o.cash}</td>
                     <td>{o.transfer}</td>
                     <td>{o.file}</td>
                     <td>{o.balance}</td>
                     <td>{o.amount}</td>
-
                     <td>
                       <button
-                        disabled={o.balance === 0}
+                        disabled={o.balance === 0} // disable button if fully paid
                         className="btn btn-sm btn-dark"
                         onClick={() => {
                           setSelectedOrder(o);
                           setCash("");
                           setTransfer("");
+                          setFile(null);
                           setShowModal(true);
                         }}
                       >
                         {o.balance === 0 ? "Paid" : "Add Payment"}
                       </button>
                     </td>
-
                   </tr>
-
                 ))}
+
+
 
               </tbody>
 
@@ -325,73 +434,69 @@ export default function Payment() {
       {/* ================= MODAL ================= */}
 
       {showModal && selectedOrder && (
-
         <div className="modal d-block bg-dark bg-opacity-50">
-
           <div className="modal-dialog modal-lg modal-dialog-centered">
-
             <div className="modal-content">
 
+              {/* Modal Header */}
               <div className="modal-header">
-                <h5>Add Payment</h5>
+                <h5>
+                  Add Payment — {selectedOrder.id} {/* Added ID here */}
+                </h5>
                 <button className="btn-close" onClick={resetModal}></button>
               </div>
 
+              {/* Modal Body */}
               <div className="modal-body">
 
                 {/* ORDER INFO */}
-
-                <div className="row mb-3 ">
- <div className="col-md-4">
-<b>Date : </b>{selectedOrder.dateTime}<br></br>
-<b>User : </b>{selectedOrder.userName}<br></br>
-
-
-                  </div>
-                   <div className="col-md-4">
-                     <b>Phone : </b>{selectedOrder.phone}<br></br>
-                   <b>Size : </b>{selectedOrder.itemSize}<br></br>
-                  
-                 
-                  </div>
-                   <div className="col-md-4">
-                  <b>Rate : </b>{selectedOrder.itemRate}<br></br>
-                  <b>Cost : </b>{selectedOrder.totalCost}<br></br>
+                <div className="row mb-3">
+                  <div className="col-md-6">
+                    <b>User :</b> {selectedOrder.userName}<br />
+                    <b>Phone :</b> {selectedOrder.phone}
                   </div>
 
+                  <div className="col-md-6">
+                    <b>Cost :</b> {selectedOrder.totalCost}<br />
+                    <b>Remaining Balance :</b> {remainingBalance < 0 ? 0 : remainingBalance}
+                  </div>
                 </div>
-                 <div className="row g-3">
-                  <div className="col-12">
-<hr></hr>
-                    </div>
-                 </div>
 
-                {/* INPUTS */}
+                <hr />
 
+                {/* PAYMENT INPUTS */}
                 <div className="row g-3">
 
-                  <div className="col-md-3">
+                  <div className="col-md-6">
                     <label>Cash</label>
                     <input
                       className="form-control"
                       placeholder="Enter cash"
                       value={cash}
-                      onChange={e => setCash(e.target.value)}
+                      onChange={e => {
+                        const val = e.target.value.replace(/[^0-9]/g, "");
+                        setCash(val);
+                      }}
+
                     />
                   </div>
 
-                  <div className="col-md-3">
+                  <div className="col-md-6">
                     <label>Transfer</label>
                     <input
                       className="form-control"
                       placeholder="Enter transfer"
                       value={transfer}
-                      onChange={e => setTransfer(e.target.value)}
+                      onChange={e => {
+                        const val = e.target.value.replace(/[^0-9]/g, "");
+                        setTransfer(val);
+                      }}
+
                     />
                   </div>
 
                   <div className="col-md-6">
-                    <label>Attached File</label>
+                    <label>Attach File (for Transfer)</label>
                     <input
                       type="file"
                       className="form-control"
@@ -399,49 +504,25 @@ export default function Payment() {
                     />
                   </div>
 
-                  <div className="col-md-6">
-                    <label>Balance</label>
-                    <input
-                      className="form-control"
-                      placeholder="Remaining balance"
-                      value={selectedOrder.totalCost - (Number(cash) + Number(transfer))}
-                      readOnly
-                    />
-                  </div>
-
-                  <div className="col-md-6">
-                    <label>Amount</label>
-                    <input
-                      className="form-control"
-                      placeholder="Paid amount"
-                      value={Number(cash) + Number(transfer)}
-                      readOnly
-                    />
-                  </div>
-
                 </div>
 
               </div>
 
+              {/* Modal Footer */}
               <div className="modal-footer">
-
                 <button className="btn btn-secondary" onClick={resetModal}>
                   Cancel
                 </button>
-
                 <button className="btn btn-dark" onClick={handleSavePayment}>
                   Submit
                 </button>
-
               </div>
 
             </div>
-
           </div>
-
         </div>
-
       )}
+
 
     </div>
 

@@ -27,6 +27,10 @@ export default function Payment() {
   const [monthFilter, setMonthFilter] = useState(""); // YYYY-MM
   const [dateFilter, setDateFilter] = useState(""); // YYYY-MM-DD
 
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+const [historyOrder, setHistoryOrder] = useState(null);
+
+
 
   const paidNow = useMemo(() => {
     return Number(cash || 0) + Number(transfer || 0);
@@ -56,19 +60,21 @@ export default function Payment() {
 
     return orders.map(order => {
 
-      const pay = payments.find(p => p.id === order.id) || {};
+     
+const orderPayments = payments.filter(p => p.id === order.id);
 
-      const cashVal = Number(pay.cash || 0);
-      const transferVal = Number(pay.transfer || 0);
+const cashVal = orderPayments.reduce((s, p) => s + Number(p.cash || 0), 0);
+const transferVal = orderPayments.reduce((s, p) => s + Number(p.transfer || 0), 0);
       const amount = cashVal + transferVal;
-      const balance = Number(order.totalCost) - amount;
+      const balance = order.balance ?? Number(order.totalCost) - amount;
 
       return {
         ...order,
-        paymentDate: pay.date || "",
+        paymentDate: orderPayments.length ? orderPayments[orderPayments.length - 1].date : "",
+file: orderPayments.length ? orderPayments[orderPayments.length - 1].file : "",
         cash: cashVal,
         transfer: transferVal,
-        file: pay.file || "",
+        
         amount,
         balance
       };
@@ -123,6 +129,7 @@ export default function Payment() {
 
  const handleSavePayment = () => {
 
+  // validation
   const paidAmount = Number(cash) + Number(transfer);
 
   if (paidAmount <= 0) {
@@ -130,48 +137,64 @@ export default function Payment() {
     return;
   }
 
-  if (paidAmount > selectedOrder.balance) {
-    alert("Payment exceeds remaining balance");
-    return;
-  }
+  // create new payment
+  const newPayment = {
+    id: selectedOrder.id,
+    cash: Number(cash),
+    transfer: Number(transfer),
+    file: file ? file.name : "",
+    date: new Date().toLocaleString()
+  };
 
-  // Find existing payment record
-  const existingPayment = payments.find(p => p.id === selectedOrder.id);
+  // NEW FIXED LOGIC
+  const existingPayments = payments.filter(
+    p => p.id === selectedOrder.id
+  );
 
-  let updatedPayment;
+  const updatedList = payments.filter(
+    p => p.id !== selectedOrder.id
+  );
 
-  if (existingPayment) {
-
-    // ADD new payment to old payment
-    updatedPayment = {
-      ...existingPayment,
-      cash: Number(existingPayment.cash) + Number(cash),
-      transfer: Number(existingPayment.transfer) + Number(transfer),
-      file: file ? file.name : existingPayment.file,
-      date: new Date().toLocaleString()
-    };
-
-  } else {
-
-    // First payment
-    updatedPayment = {
-      id: selectedOrder.id,
-      cash: Number(cash),
-      transfer: Number(transfer),
-      file: file ? file.name : "",
-      date: new Date().toLocaleString()
-    };
-
-  }
-
-  const updatedList = payments.filter(p => p.id !== selectedOrder.id);
-  updatedList.push(updatedPayment);
+  updatedList.push(...existingPayments, newPayment);
 
   setPayments(updatedList);
   localStorage.setItem("payments", JSON.stringify(updatedList));
 
+  // ================= UPDATE ORDER BALANCE + STATUS =================
+
+const orderPayments = updatedList.filter(
+  p => p.id === selectedOrder.id
+);
+
+const totalPaid = orderPayments.reduce(
+  (sum, p) => sum + Number(p.cash) + Number(p.transfer),
+  0
+);
+
+const updatedOrders = orders.map(o => {
+
+  if (o.id !== selectedOrder.id) return o;
+
+  const remaining = Number(o.totalCost) - totalPaid;
+
+  return {
+  ...o,
+  paidAmount: totalPaid,
+  balance: remaining < 0 ? 0 : remaining,
+  status: remaining <= 0 ? "Closed" : "InProgress",
+  lastPaymentDate: new Date().toLocaleString()
+};
+
+
+});
+
+setOrders(updatedOrders);
+localStorage.setItem("orders", JSON.stringify(updatedOrders));
+
+
   resetModal();
 };
+
 
 
   const resetModal = () => {
@@ -413,6 +436,16 @@ export default function Payment() {
                       >
                         {o.balance === 0 ? "Paid" : "Add Payment"}
                       </button>
+                      <button
+  className="btn btn-sm btn-primary ms-2"
+  onClick={() => {
+    setHistoryOrder(o);
+    setShowHistoryModal(true);
+  }}
+>
+  History
+</button>
+
                     </td>
                   </tr>
                 ))}
@@ -523,6 +556,83 @@ export default function Payment() {
         </div>
       )}
 
+{showHistoryModal && historyOrder && (
+
+  <div className="modal d-block bg-dark bg-opacity-50">
+
+    <div className="modal-dialog modal-lg modal-dialog-centered">
+
+      <div className="modal-content">
+
+        <div className="modal-header">
+          <h5>Payment History — {historyOrder.id}</h5>
+          <button
+            className="btn-close"
+            onClick={() => setShowHistoryModal(false)}
+          />
+        </div>
+
+        <div className="modal-body">
+
+          <table className="table table-bordered">
+
+            <thead className="table-light">
+              <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Cash</th>
+                <th>Transfer</th>
+                <th>File</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              {payments
+                .filter(p => p.id === historyOrder.id)
+                .map((p, i) => (
+
+                  <tr key={i}>
+                    <td>{i + 1}</td>
+                    <td>{p.date}</td>
+                    <td>{p.cash}</td>
+                    <td>{p.transfer}</td>
+                    <td>{p.file}</td>
+                  </tr>
+
+                ))}
+
+            </tbody>
+
+            <tfoot className="table-light fw-bold">
+
+              <tr>
+                <td colSpan="2">Total Paid</td>
+                <td colSpan="3">
+                  {historyOrder.amount}
+                </td>
+              </tr>
+
+              <tr>
+                <td colSpan="2">Remaining Balance</td>
+                <td colSpan="3">
+                  {historyOrder.balance}
+                </td>
+              </tr>
+
+            </tfoot>
+
+          </table>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+)}
 
     </div>
 

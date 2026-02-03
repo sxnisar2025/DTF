@@ -394,7 +394,7 @@ export default function Payment() {
                   <th>Cost</th>
                   <th>Cash</th>
                   <th>Transfer</th>
-                  <th>File</th>
+                  
                   <th>Balance</th>
                   <th>Status</th>
                   <th>Amount</th>
@@ -418,7 +418,7 @@ export default function Payment() {
                     <td>{o.totalCost}</td>
                     <td>{o.cash}</td>
                     <td>{o.transfer}</td>
-                    <td>{o.file}</td>
+                   
                     <td>{o.balance}</td>
                     <td >
                       <span

@@ -14,15 +14,40 @@ export default function Invoice() {
 
   // ================= LOAD DATA =================
 
-  useEffect(() => {
+ useEffect(() => {
 
+  const loadData = () => {
     const orderData = JSON.parse(localStorage.getItem("orders")) || [];
     const paymentData = JSON.parse(localStorage.getItem("payments")) || [];
 
     setOrders(orderData);
     setPayments(paymentData);
+  };
 
-  }, []);
+  // initial load
+  loadData();
+
+  // ✅ listen for payment/order updates
+  const handleStorageChange = (event) => {
+    if (event.key === "payments" || event.key === "orders") {
+      loadData();
+
+      // auto refresh invoice if already open
+      if (invoiceData) {
+        setTimeout(() => {
+          handleSearch();
+        }, 100);
+      }
+    }
+  };
+
+  window.addEventListener("storage", handleStorageChange);
+
+  return () => {
+    window.removeEventListener("storage", handleStorageChange);
+  };
+
+}, [invoiceData]);
 
   // ================= SEARCH ORDER =================
 

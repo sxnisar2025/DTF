@@ -151,14 +151,10 @@ file: orderPayments.length ? orderPayments[orderPayments.length - 1].file : "",
     p => p.id === selectedOrder.id
   );
 
-  const updatedList = payments.filter(
-    p => p.id !== selectedOrder.id
-  );
-
-  updatedList.push(...existingPayments, newPayment);
-
-  setPayments(updatedList);
-  localStorage.setItem("payments", JSON.stringify(updatedList));
+ const updatedList = payments.filter(p => p.id !== selectedOrder.id);
+updatedList.push(...existingPayments, newPayment);
+setPayments(updatedList);
+localStorage.setItem("payments", JSON.stringify(updatedList));
 
   // ================= UPDATE ORDER BALANCE + STATUS =================
 
@@ -172,21 +168,22 @@ const totalPaid = orderPayments.reduce(
 );
 
 const updatedOrders = orders.map(o => {
-
   if (o.id !== selectedOrder.id) return o;
 
   const remaining = Number(o.totalCost) - totalPaid;
 
   return {
-  ...o,
-  paidAmount: totalPaid,
-  balance: remaining < 0 ? 0 : remaining,
-  status: remaining <= 0 ? "Closed" : "InProgress",
-  lastPaymentDate: new Date().toLocaleString()
-};
-
-
+    ...o,
+    paidAmount: totalPaid,                  // store cumulative paid
+    balance: remaining < 0 ? 0 : remaining, // remaining balance
+    status: remaining <= 0 ? "Closed" : "InProgress",
+    lastPaymentDate: new Date().toLocaleString()
+  };
 });
+
+setOrders(updatedOrders);
+localStorage.setItem("orders", JSON.stringify(updatedOrders));
+
 
 setOrders(updatedOrders);
 localStorage.setItem("orders", JSON.stringify(updatedOrders));

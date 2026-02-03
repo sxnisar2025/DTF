@@ -30,6 +30,7 @@ export default function Order() {
     city: "",
     address: "",
     orderType: "Local",
+    itemName: "",
     itemSize: "",
     itemRate: "",
     totalCost: 0,
@@ -65,26 +66,15 @@ export default function Order() {
   // ================= AUTO STATUS FROM PAYMENT =================
 
   const mergedOrders = useMemo(() => {
+    return orders.map(order => ({
+      ...order,
+      status: order.status || "InProgress",
+      balance: order.balance ?? order.totalCost,
+      paidAmount: order.paidAmount ?? 0,
+      lastPaymentDate: order.lastPaymentDate || ""
+    }));
+  }, [orders]);
 
-    return orders.map(order => {
-
-      const payment = payments.find(p => p.id === order.id);
-
-      if (!payment) {
-        return { ...order, status: "InProgress" };
-      }
-
-      const paid =
-        Number(payment.cash || 0) +
-        Number(payment.transfer || 0);
-
-      const status = paid >= order.totalCost ? "Closed" : "InProgress";
-
-      return { ...order, status };
-
-    });
-
-  }, [orders, payments]);
 
   // ================= ID GENERATOR =================
 
@@ -139,23 +129,23 @@ export default function Order() {
 
   // ================= FORM =================
 
- const handleChange = (e) => {
-  const { name, value } = e.target;
+  const handleChange = (e) => {
+    const { name, value } = e.target;
 
-  if (name === "phone") {
-    // Ensure it always starts with 03
-    let digitsOnly = value.replace(/\D/g, "");
-    if (!digitsOnly.startsWith("03")) digitsOnly = "03";
+    if (name === "phone") {
+      // Ensure it always starts with 03
+      let digitsOnly = value.replace(/\D/g, "");
+      if (!digitsOnly.startsWith("03")) digitsOnly = "03";
 
-    // Limit to 11 digits
-    if (digitsOnly.length > 11) digitsOnly = digitsOnly.slice(0, 11);
+      // Limit to 11 digits
+      if (digitsOnly.length > 11) digitsOnly = digitsOnly.slice(0, 11);
 
-    setForm(prev => ({ ...prev, [name]: digitsOnly }));
-    return;
-  }
+      setForm(prev => ({ ...prev, [name]: digitsOnly }));
+      return;
+    }
 
-  setForm(prev => ({ ...prev, [name]: value }));
-};
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
 
 
 
@@ -215,6 +205,7 @@ export default function Order() {
       city: "",
       address: "",
       orderType: "Local",
+      itemName: "",
       itemSize: "",
       itemRate: "",
       totalCost: 0,
@@ -406,12 +397,10 @@ export default function Order() {
                   <th>Date</th>
                   <th>User</th>
                   <th>Phone</th>
-                  <th>City</th>
-                  <th>Address</th>
-                  <th>Type</th>
-                  <th>Size</th>
+                  <th>Item Name</th>
+                  <th>Size "Meter"</th>
                   <th>Rate</th>
-                  <th>Total</th>
+                  <th>Cost</th>
                   <th>Status</th>
                   <th>Action</th>
                 </tr>
@@ -420,45 +409,44 @@ export default function Order() {
 
               <tbody>
                 {filteredOrders.map((o, i) => (
-  <tr key={i}>
-    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{i + 1}</td>
-    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.id}</td>
-    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.dateTime}</td>
-    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.userName}</td>
-    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.phone}</td>
-    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.city}</td>
-    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.address}</td>
-    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.orderType}</td>
-    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.itemSize}</td>
-    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.itemRate}</td>
-    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.totalCost}</td>
-    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>
-      <span
-        className={`badge ${o.status === "Closed" ? "bg-success" : "bg-warning text-dark"}`}
-      >
-        {o.status}
-      </span>
-    </td>
-    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>
-      <div className="d-flex gap-2">
-        <button
-          disabled={o.status === "Closed"}
-          onClick={() => handleEdit(i)}
-          className="btn btn-sm btn-outline-primary"
-        >
-          Edit
-        </button>
-        <button
-          disabled={o.status === "Closed"}
-          onClick={() => handleDelete(i)}
-          className="btn btn-sm btn-outline-danger"
-        >
-          Delete
-        </button>
-      </div>
-    </td>
-  </tr>
-))}
+                  <tr key={i}>
+                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{i + 1}</td>
+                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.id}</td>
+                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.dateTime}</td>
+                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.userName}</td>
+                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.phone}</td>
+                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.itemName}</td>
+
+                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.itemSize}</td>
+                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.itemRate}</td>
+                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.totalCost}</td>
+                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>
+                      <span
+                        className={`badge ${o.status === "Closed" ? "bg-success" : "bg-warning text-dark"}`}
+                      >
+                        {o.status}
+                      </span>
+                    </td>
+                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>
+                      <div className="d-flex gap-2">
+                        <button
+                          disabled={o.status === "Closed"}
+                          onClick={() => handleEdit(i)}
+                          className="btn btn-sm btn-outline-primary"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          disabled={o.status === "Closed"}
+                          onClick={() => handleDelete(i)}
+                          className="btn btn-sm btn-outline-danger"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
 
 
 
@@ -521,23 +509,9 @@ export default function Order() {
 
                     </div>
 
-                    <div className="col-md-6">
-                      <label>City</label>
-                      <input className="form-control" name="city" value={form.city} onChange={handleChange} />
-                    </div>
 
-                    <div className="col-md-6">
-                      <label>Address</label>
-                      <input className="form-control" name="address" value={form.address} onChange={handleChange} />
-                    </div>
 
-                    <div className="col-md-6">
-                      <label>Order Type</label>
-                      <select className="form-select" name="orderType" value={form.orderType} onChange={handleChange}>
-                        <option>Local</option>
-                        <option>Online</option>
-                      </select>
-                    </div>
+
 
                     <div className="col-md-6">
                       <label>Item Size *</label>
@@ -549,14 +523,26 @@ export default function Order() {
                       <input type="number" className="form-control" name="itemRate" value={form.itemRate} onChange={handleChange} required />
                     </div>
 
+
+                    <div className="col-md-6">
+                      <label>Item Name</label>
+                      <input
+                        className="form-control"
+                        name="itemName"
+                        value={form.itemName}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+
                     <div className="col-md-6">
                       <label>Total Cost</label>
                       <input
-  className="form-control"
-  value={form.totalCost}
-  readOnly
-  style={{ backgroundColor: "#f5f5f5" }}
-/>
+                        className="form-control"
+                        value={form.totalCost}
+                        readOnly
+                        style={{ backgroundColor: "#f5f5f5" }}
+                      />
                     </div>
 
                   </div>

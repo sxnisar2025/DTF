@@ -30,30 +30,28 @@ export default function Invoice() {
 
     if (!search) return alert("Enter Order ID or Phone");
 
-    const order = orders.find(o =>
-      o.id === search || o.phone === search
-    );
+    const order = orders.find(o => o.id === search || o.phone === search);
 
     if (!order) {
-      setInvoiceData(null);
-      return alert("Order not found");
-    }
+  setInvoiceData(null);
+  return alert("Order not found");
+}
 
     const payment = payments.find(p => p.id === order.id);
 
     const cash = Number(payment?.cash || 0);
     const transfer = Number(payment?.transfer || 0);
 
-    const paid = cash + transfer;
-    const balance = order.totalCost - paid;
+    const paid = order.paidAmount ?? 0;
+const balance = order.balance ?? order.totalCost;
 
-    setInvoiceData({
-      ...order,
-      cash,
-      transfer,
-      paid,
-      balance
-    });
+   setInvoiceData({
+  ...order,
+  cash: paid,        // optional: sum cash+transfer if needed separately
+  transfer: 0,       // optional
+  paid,
+  balance
+});
 
   };
 

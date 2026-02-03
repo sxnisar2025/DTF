@@ -390,7 +390,7 @@ export default function Payment() {
                   <th>Date</th>
                   <th>User</th>
                   <th>Phone</th>
-                  <th>Item Name</th>
+                  <th>Description</th>
                   <th>Cost</th>
                   <th>Cash</th>
                   <th>Transfer</th>
@@ -414,7 +414,7 @@ export default function Payment() {
                     <td>{o.paymentDate || o.dateTime}</td>
                     <td>{o.userName}</td>
                     <td>{o.phone}</td>
-                    <td >{o.itemName}</td>
+                    <td >{o.Description}</td>
                     <td>{o.totalCost}</td>
                     <td>{o.cash}</td>
                     <td>{o.transfer}</td>

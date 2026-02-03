@@ -30,7 +30,7 @@ export default function Order() {
     city: "",
     address: "",
     orderType: "Local",
-    itemName: "",
+    Description: "",
     itemSize: "",
     itemRate: "",
     totalCost: 0,
@@ -205,7 +205,7 @@ export default function Order() {
       city: "",
       address: "",
       orderType: "Local",
-      itemName: "",
+      Description: "",
       itemSize: "",
       itemRate: "",
       totalCost: 0,
@@ -397,7 +397,7 @@ export default function Order() {
                   <th>Date</th>
                   <th>User</th>
                   <th>Phone</th>
-                  <th>Item Name</th>
+                  <th>Description</th>
                   <th>Size "Meter"</th>
                   <th>Rate</th>
                   <th>Cost</th>
@@ -417,7 +417,7 @@ export default function Order() {
                     <td >{o.dateTime}</td>
                     <td >{o.userName}</td>
                     <td >{o.phone}</td>
-                    <td >{o.itemName}</td>
+                    <td >{o.Description}</td>
 
                     <td >{o.itemSize}</td>
                     <td >{o.itemRate}</td>
@@ -527,11 +527,11 @@ export default function Order() {
 
 
                     <div className="col-md-6">
-                      <label>Item Name</label>
+                      <label>Description</label>
                       <input
                         className="form-control"
-                        name="itemName"
-                        value={form.itemName}
+                        name="Description"
+                        value={form.Description}
                         onChange={handleChange}
                         required
                       />

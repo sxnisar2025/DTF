@@ -26,34 +26,53 @@ export default function Invoice() {
 
   // ================= SEARCH ORDER =================
 
-  const handleSearch = () => {
+ const handleSearch = () => {
 
-    if (!search) return alert("Enter Order ID or Phone");
+  if (!search) return alert("Enter Order ID or Phone");
 
-    const order = orders.find(o => o.id === search || o.phone === search);
+  const order = orders.find(
+    o => o.id === search || o.phone === search
+  );
 
-    if (!order) {
-  setInvoiceData(null);
-  return alert("Order not found");
-}
+  if (!order) {
+    setInvoiceData(null);
+    return alert("Order not found");
+  }
 
-    const payment = payments.find(p => p.id === order.id);
+  // ✅ GET ALL PAYMENTS FOR THIS ORDER
+  const orderPayments = payments.filter(
+    p => p.id === order.id
+  );
 
-    const cash = Number(payment?.cash || 0);
-    const transfer = Number(payment?.transfer || 0);
+  // ✅ SUM CASH
+  const totalCash = orderPayments.reduce(
+    (sum, p) => sum + Number(p.cash || 0),
+    0
+  );
 
-    const paid = order.paidAmount ?? 0;
-const balance = order.balance ?? order.totalCost;
+  // ✅ SUM TRANSFER
+  const totalTransfer = orderPayments.reduce(
+    (sum, p) => sum + Number(p.transfer || 0),
+    0
+  );
 
-   setInvoiceData({
-  ...order,
-  cash: paid,        // optional: sum cash+transfer if needed separately
-  transfer: 0,       // optional
-  paid,
-  balance
-});
+  // ✅ TOTAL PAID
+  const totalPaid = totalCash + totalTransfer;
 
-  };
+  // ✅ BALANCE
+  const balance = Number(order.totalCost) - totalPaid;
+
+  // ✅ SET INVOICE DATA
+  setInvoiceData({
+    ...order,
+    cash: totalCash,
+    transfer: totalTransfer,
+    paid: totalPaid,
+    balance: balance < 0 ? 0 : balance
+  });
+
+};
+
 
   // ================= PDF EXPORT =================
 
@@ -161,7 +180,7 @@ const balance = order.balance ?? order.totalCost;
 
                 <div>
                   <h5 className="fw-bold">DTF SYSTEM</h5>
-                  <small>Professional Printing Service</small>
+                  <small>Sxentra Printing Service</small>
                 </div>
 
                 <div className="text-end">
@@ -176,12 +195,10 @@ const balance = order.balance ?? order.totalCost;
               <div className="row mb-3">
 
                 <div className="col">
-                  <b>Customer:</b> {invoiceData.userName}
+                  <b>Customer:</b> {invoiceData.userName} | <b>Phone:</b> {invoiceData.phone}
                 </div>
 
-                <div className="col">
-                  <b>Phone:</b> {invoiceData.phone}
-                </div>
+              
 
               </div>
 
@@ -200,7 +217,7 @@ const balance = order.balance ?? order.totalCost;
 
                 <tbody>
                   <tr>
-                    <td>{invoiceData.orderType} Order</td>
+                    <td>{invoiceData.Description}</td>
                     <td>{invoiceData.itemSize}</td>
                     <td>{invoiceData.itemRate}</td>
                     <td>{invoiceData.totalCost}</td>

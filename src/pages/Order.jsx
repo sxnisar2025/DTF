@@ -409,25 +409,27 @@ export default function Order() {
 
               <tbody>
                 {filteredOrders.map((o, i) => (
-                  <tr key={i}>
-                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{i + 1}</td>
-                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.id}</td>
-                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.dateTime}</td>
-                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.userName}</td>
-                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.phone}</td>
-                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.itemName}</td>
+                  <tr key={i}
+                  className={o.balance === 0 ? "table-success" : ""} // Bootstrap class for light green
+                  >
+                    <td >{i + 1}</td>
+                    <td >{o.id}</td>
+                    <td >{o.dateTime}</td>
+                    <td >{o.userName}</td>
+                    <td >{o.phone}</td>
+                    <td >{o.itemName}</td>
 
-                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.itemSize}</td>
-                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.itemRate}</td>
-                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>{o.totalCost}</td>
-                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>
+                    <td >{o.itemSize}</td>
+                    <td >{o.itemRate}</td>
+                    <td >{o.totalCost}</td>
+                    <td >
                       <span
                         className={`badge ${o.status === "Closed" ? "bg-success" : "bg-warning text-dark"}`}
                       >
                         {o.status}
                       </span>
                     </td>
-                    <td style={o.status === "Closed" ? { backgroundColor: "#E9FCE9" } : {}}>
+                    <td >
                       <div className="d-flex gap-2">
                         <button
                           disabled={o.status === "Closed"}

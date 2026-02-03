@@ -28,9 +28,9 @@ export default function Payment() {
   const [dateFilter, setDateFilter] = useState(""); // YYYY-MM-DD
 
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-const [historyOrder, setHistoryOrder] = useState(null);
+  const [historyOrder, setHistoryOrder] = useState(null);
 
-
+  const [paymentMethod, setPaymentMethod] = useState("");
 
   const paidNow = useMemo(() => {
     return Number(cash || 0) + Number(transfer || 0);
@@ -60,21 +60,21 @@ const [historyOrder, setHistoryOrder] = useState(null);
 
     return orders.map(order => {
 
-     
-const orderPayments = payments.filter(p => p.id === order.id);
 
-const cashVal = orderPayments.reduce((s, p) => s + Number(p.cash || 0), 0);
-const transferVal = orderPayments.reduce((s, p) => s + Number(p.transfer || 0), 0);
+      const orderPayments = payments.filter(p => p.id === order.id);
+
+      const cashVal = orderPayments.reduce((s, p) => s + Number(p.cash || 0), 0);
+      const transferVal = orderPayments.reduce((s, p) => s + Number(p.transfer || 0), 0);
       const amount = cashVal + transferVal;
       const balance = order.balance ?? Number(order.totalCost) - amount;
 
       return {
         ...order,
         paymentDate: orderPayments.length ? orderPayments[orderPayments.length - 1].date : "",
-file: orderPayments.length ? orderPayments[orderPayments.length - 1].file : "",
+        file: orderPayments.length ? orderPayments[orderPayments.length - 1].file : "",
         cash: cashVal,
         transfer: transferVal,
-        
+
         amount,
         balance
       };
@@ -127,70 +127,70 @@ file: orderPayments.length ? orderPayments[orderPayments.length - 1].file : "",
 
   // ================= SAVE PAYMENT =================
 
- const handleSavePayment = () => {
+  const handleSavePayment = () => {
 
-  // validation
-  const paidAmount = Number(cash) + Number(transfer);
+    // validation
+    const paidAmount = Number(cash) + Number(transfer);
 
-  if (paidAmount <= 0) {
-    alert("Enter payment amount");
-    return;
-  }
+    if (paidAmount <= 0) {
+      alert("Enter payment amount");
+      return;
+    }
 
-  // create new payment
-  const newPayment = {
-    id: selectedOrder.id,
-    cash: Number(cash),
-    transfer: Number(transfer),
-    file: file ? file.name : "",
-    date: new Date().toLocaleString()
+    // create new payment
+    const newPayment = {
+      id: selectedOrder.id,
+      cash: Number(cash),
+      transfer: Number(transfer),
+      file: file ? file.name : "",
+      date: new Date().toLocaleString()
+    };
+
+    // NEW FIXED LOGIC
+    const existingPayments = payments.filter(
+      p => p.id === selectedOrder.id
+    );
+
+    const updatedList = payments.filter(p => p.id !== selectedOrder.id);
+    updatedList.push(...existingPayments, newPayment);
+    setPayments(updatedList);
+    localStorage.setItem("payments", JSON.stringify(updatedList));
+
+    // ================= UPDATE ORDER BALANCE + STATUS =================
+
+    const orderPayments = updatedList.filter(
+      p => p.id === selectedOrder.id
+    );
+
+    const totalPaid = orderPayments.reduce(
+      (sum, p) => sum + Number(p.cash) + Number(p.transfer),
+      0
+    );
+
+    const updatedOrders = orders.map(o => {
+      if (o.id !== selectedOrder.id) return o;
+
+      const remaining = Number(o.totalCost) - totalPaid;
+
+      return {
+        ...o,
+        paidAmount: totalPaid,                  // store cumulative paid
+        balance: remaining < 0 ? 0 : remaining, // remaining balance
+        status: remaining <= 0 ? "Closed" : "InProgress",
+        lastPaymentDate: new Date().toLocaleString()
+      };
+    });
+
+    setOrders(updatedOrders);
+    localStorage.setItem("orders", JSON.stringify(updatedOrders));
+
+
+    setOrders(updatedOrders);
+    localStorage.setItem("orders", JSON.stringify(updatedOrders));
+
+
+    resetModal();
   };
-
-  // NEW FIXED LOGIC
-  const existingPayments = payments.filter(
-    p => p.id === selectedOrder.id
-  );
-
- const updatedList = payments.filter(p => p.id !== selectedOrder.id);
-updatedList.push(...existingPayments, newPayment);
-setPayments(updatedList);
-localStorage.setItem("payments", JSON.stringify(updatedList));
-
-  // ================= UPDATE ORDER BALANCE + STATUS =================
-
-const orderPayments = updatedList.filter(
-  p => p.id === selectedOrder.id
-);
-
-const totalPaid = orderPayments.reduce(
-  (sum, p) => sum + Number(p.cash) + Number(p.transfer),
-  0
-);
-
-const updatedOrders = orders.map(o => {
-  if (o.id !== selectedOrder.id) return o;
-
-  const remaining = Number(o.totalCost) - totalPaid;
-
-  return {
-    ...o,
-    paidAmount: totalPaid,                  // store cumulative paid
-    balance: remaining < 0 ? 0 : remaining, // remaining balance
-    status: remaining <= 0 ? "Closed" : "InProgress",
-    lastPaymentDate: new Date().toLocaleString()
-  };
-});
-
-setOrders(updatedOrders);
-localStorage.setItem("orders", JSON.stringify(updatedOrders));
-
-
-setOrders(updatedOrders);
-localStorage.setItem("orders", JSON.stringify(updatedOrders));
-
-
-  resetModal();
-};
 
 
 
@@ -199,6 +199,7 @@ localStorage.setItem("orders", JSON.stringify(updatedOrders));
     setCash("");
     setTransfer("");
     setFile(null);
+    setPaymentMethod("");
     setShowModal(false);
 
   };
@@ -389,12 +390,13 @@ localStorage.setItem("orders", JSON.stringify(updatedOrders));
                   <th>Date</th>
                   <th>User</th>
                   <th>Phone</th>
-                 
+                  <th>Item Name</th>
                   <th>Cost</th>
                   <th>Cash</th>
                   <th>Transfer</th>
                   <th>File</th>
                   <th>Balance</th>
+                  <th>Status</th>
                   <th>Amount</th>
                   <th>Action</th>
                 </tr>
@@ -412,12 +414,19 @@ localStorage.setItem("orders", JSON.stringify(updatedOrders));
                     <td>{o.paymentDate || o.dateTime}</td>
                     <td>{o.userName}</td>
                     <td>{o.phone}</td>
-                    
+                    <td >{o.itemName}</td>
                     <td>{o.totalCost}</td>
                     <td>{o.cash}</td>
                     <td>{o.transfer}</td>
                     <td>{o.file}</td>
                     <td>{o.balance}</td>
+                    <td >
+                      <span
+                        className={`badge ${o.status === "Closed" ? "bg-success" : "bg-warning text-dark"}`}
+                      >
+                        {o.status}
+                      </span>
+                    </td>
                     <td>{o.amount}</td>
                     <td>
                       <button
@@ -434,14 +443,14 @@ localStorage.setItem("orders", JSON.stringify(updatedOrders));
                         {o.balance === 0 ? "Paid" : "Add Payment"}
                       </button>
                       <button
-  className="btn btn-sm btn-primary ms-2"
-  onClick={() => {
-    setHistoryOrder(o);
-    setShowHistoryModal(true);
-  }}
->
-  History
-</button>
+                        className="btn btn-sm btn-primary ms-2"
+                        onClick={() => {
+                          setHistoryOrder(o);
+                          setShowHistoryModal(true);
+                        }}
+                      >
+                        History
+                      </button>
 
                     </td>
                   </tr>
@@ -483,12 +492,11 @@ localStorage.setItem("orders", JSON.stringify(updatedOrders));
                 <div className="row mb-3">
                   <div className="col-md-6">
                     <b>User :</b> {selectedOrder.userName}<br />
-                    <b>Phone :</b> {selectedOrder.phone}
+
                   </div>
 
                   <div className="col-md-6">
-                    <b>Cost :</b> {selectedOrder.totalCost}<br />
-                    <b>Remaining Balance :</b> {remainingBalance < 0 ? 0 : remainingBalance}
+                    <b>Phone :</b> {selectedOrder.phone}
                   </div>
                 </div>
 
@@ -497,44 +505,77 @@ localStorage.setItem("orders", JSON.stringify(updatedOrders));
                 {/* PAYMENT INPUTS */}
                 <div className="row g-3">
 
+                  {/* PAYMENT METHOD */}
                   <div className="col-md-6">
-                    <label>Cash</label>
-                    <input
-                      className="form-control"
-                      placeholder="Enter cash"
-                      value={cash}
+                    <label>Select Payment Method</label>
+                    <select
+                      className="form-select"
+                      value={paymentMethod}
                       onChange={e => {
-                        const val = e.target.value.replace(/[^0-9]/g, "");
-                        setCash(val);
+                        setPaymentMethod(e.target.value);
+                        setCash("");
+                        setTransfer("");
+                        setFile(null);
                       }}
-
-                    />
+                    >
+                      <option value="">Select</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Transfer">Transfer</option>
+                    </select>
                   </div>
 
-                  <div className="col-md-6">
-                    <label>Transfer</label>
-                    <input
-                      className="form-control"
-                      placeholder="Enter transfer"
-                      value={transfer}
-                      onChange={e => {
-                        const val = e.target.value.replace(/[^0-9]/g, "");
-                        setTransfer(val);
-                      }}
 
-                    />
-                  </div>
+                  {/* CASH FIELD */}
+                  {paymentMethod === "Cash" && (
 
-                  <div className="col-md-6">
-                    <label>Attach File (for Transfer)</label>
-                    <input
-                      type="file"
-                      className="form-control"
-                      onChange={e => setFile(e.target.files[0])}
-                    />
-                  </div>
+                    <div className="col-md-6">
+                      <label>Cash Amount</label>
+                      <input
+                        className="form-control"
+                        placeholder="Enter cash"
+                        value={cash}
+                        onChange={e => {
+                          const val = e.target.value.replace(/[^0-9]/g, "");
+                          setCash(val);
+                        }}
+                      />
+                    </div>
+
+                  )}
+
+
+                  {/* TRANSFER FIELD */}
+                  {paymentMethod === "Transfer" && (
+
+                    <>
+                      <div className="col-md-6">
+                        <label>Transfer Amount</label>
+                        <input
+                          className="form-control"
+                          placeholder="Enter transfer"
+                          value={transfer}
+                          onChange={e => {
+                            const val = e.target.value.replace(/[^0-9]/g, "");
+                            setTransfer(val);
+                          }}
+                        />
+                      </div>
+
+                      <div className="col-md-6">
+                        <label>Attach Receipt</label>
+                        <input
+                          type="file"
+                          className="form-control"
+                          onChange={e => setFile(e.target.files[0])}
+                        />
+                      </div>
+                    </>
+
+                  )}
 
                 </div>
+
+
 
               </div>
 
@@ -553,83 +594,83 @@ localStorage.setItem("orders", JSON.stringify(updatedOrders));
         </div>
       )}
 
-{showHistoryModal && historyOrder && (
+      {showHistoryModal && historyOrder && (
 
-  <div className="modal d-block bg-dark bg-opacity-50">
+        <div className="modal d-block bg-dark bg-opacity-50">
 
-    <div className="modal-dialog modal-lg modal-dialog-centered">
+          <div className="modal-dialog modal-lg modal-dialog-centered">
 
-      <div className="modal-content">
+            <div className="modal-content">
 
-        <div className="modal-header">
-          <h5>Payment History — {historyOrder.id}</h5>
-          <button
-            className="btn-close"
-            onClick={() => setShowHistoryModal(false)}
-          />
+              <div className="modal-header">
+                <h5>Payment History — {historyOrder.id}</h5>
+                <button
+                  className="btn-close"
+                  onClick={() => setShowHistoryModal(false)}
+                />
+              </div>
+
+              <div className="modal-body">
+
+                <table className="table table-bordered">
+
+                  <thead className="table-light">
+                    <tr>
+                      <th>#</th>
+                      <th>Date</th>
+                      <th>Cash</th>
+                      <th>Transfer</th>
+                      <th>File</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+                    {payments
+                      .filter(p => p.id === historyOrder.id)
+                      .map((p, i) => (
+
+                        <tr key={i}>
+                          <td>{i + 1}</td>
+                          <td>{p.date}</td>
+                          <td>{p.cash}</td>
+                          <td>{p.transfer}</td>
+                          <td>{p.file}</td>
+                        </tr>
+
+                      ))}
+
+                  </tbody>
+
+                  <tfoot className="table-light fw-bold">
+
+                    <tr>
+                      <td colSpan="2">Total Paid</td>
+                      <td colSpan="3">
+                        {historyOrder.amount}
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td colSpan="2">Remaining Balance</td>
+                      <td colSpan="3">
+                        {historyOrder.balance}
+                      </td>
+                    </tr>
+
+                  </tfoot>
+
+                </table>
+
+              </div>
+
+            </div>
+
+          </div>
+
         </div>
 
-        <div className="modal-body">
-
-          <table className="table table-bordered">
-
-            <thead className="table-light">
-              <tr>
-                <th>#</th>
-                <th>Date</th>
-                <th>Cash</th>
-                <th>Transfer</th>
-                <th>File</th>
-              </tr>
-            </thead>
-
-            <tbody>
-
-              {payments
-                .filter(p => p.id === historyOrder.id)
-                .map((p, i) => (
-
-                  <tr key={i}>
-                    <td>{i + 1}</td>
-                    <td>{p.date}</td>
-                    <td>{p.cash}</td>
-                    <td>{p.transfer}</td>
-                    <td>{p.file}</td>
-                  </tr>
-
-                ))}
-
-            </tbody>
-
-            <tfoot className="table-light fw-bold">
-
-              <tr>
-                <td colSpan="2">Total Paid</td>
-                <td colSpan="3">
-                  {historyOrder.amount}
-                </td>
-              </tr>
-
-              <tr>
-                <td colSpan="2">Remaining Balance</td>
-                <td colSpan="3">
-                  {historyOrder.balance}
-                </td>
-              </tr>
-
-            </tfoot>
-
-          </table>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </div>
-
-)}
+      )}
 
     </div>
 

@@ -52,11 +52,11 @@ export default function Header() {
   Invoice
 </Link>
 
-          <li className="nav-item">
+          {/* <li className="nav-item">
             <Link className={linkClass("/stock")} to="/stock">
               Stock
             </Link>
-          </li>
+          </li> */}
           <li className="nav-item">
             <Link className={linkClass("/cashflow")} to="/cashflow">
               Cashflow

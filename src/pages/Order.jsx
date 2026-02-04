@@ -237,13 +237,13 @@ export default function Order() {
           </div>
           <div className="col">
             <div className="card bg-info text-white p-3">
-              Item Size (Meters)
+              Total Size (M)
               <h5>{totalItemSize}</h5>
             </div>
           </div>
           <div className="col">
             <div className="card bg-dark text-white p-3">
-              Item Cost Amount
+              Total Cost
               <h5>{totalItemCost}</h5>
             </div>
           </div>
@@ -292,7 +292,7 @@ export default function Order() {
                   <th>User</th>
                   <th>Phone</th>
                   <th>Description</th>
-                  <th>Size "Meter"</th>
+                  <th>Size "M"</th>
                   <th>Rate</th>
                   <th>Cost</th>
                   <th>Status</th>
@@ -312,9 +312,7 @@ export default function Order() {
                     <td>{o.itemRate}</td>
                     <td>{o.totalCost}</td>
                     <td>
-                      <span className={`badge ${o.status === "Completed" ? "bg-success" : "bg-warning text-dark"}`}>
-                        {o.status}
-                      </span>
+                       <td><span className={`badge ${o.status==="Completed"?"bg-success":o.status==="Pending"?"bg-secondary text-white":"bg-warning text-dark"}`}>{o.status}</span></td>
                     </td>
                     <td>
                       <div className="d-flex gap-2">

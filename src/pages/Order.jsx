@@ -255,7 +255,7 @@ export default function Order() {
           <div className="d-flex gap-2">
             <button onClick={exportExcel} className="btn btn-outline-secondary btn-sm">Excel</button>
             <button onClick={exportPDF} className="btn btn-outline-secondary btn-sm">PDF</button>
-            <button onClick={() => setShowModal(true)} className="btn btn-dark">+ Create Order</button>
+            <button onClick={() => setShowModal(true)} className="btn btn-success">+ Create Order</button>
           </div>
         </div>
 

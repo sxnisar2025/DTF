@@ -232,10 +232,10 @@ export default function Payment() {
                     <td><span className={`badge ${o.status==="Completed"?"bg-success":o.status==="Pending"?"bg-secondary text-white":"bg-warning text-dark"}`}>{o.status}</span></td>
                     <td>{o.amount}</td>
                     <td>
-                      <button disabled={o.balance===0} className="btn btn-sm btn-dark" onClick={()=>{
+                      <button disabled={o.balance===0} className="btn btn-sm btn-success" onClick={()=>{
                         setSelectedOrder(o); setCash(""); setTransfer(""); setFile(null); setPaymentMethod(""); setShowModal(true);
                       }}>{o.balance===0?"Paid":"Add Payment"}</button>
-                      <button className="btn btn-sm btn-primary ms-2" onClick={()=>{
+                      <button className="btn btn-sm btn-dark ms-2" onClick={()=>{
                         setHistoryOrder(o); setShowHistoryModal(true);
                       }}>History</button>
                     </td>

@@ -282,6 +282,7 @@ export default function Order() {
 
         {/* TABLE */}
         <div className="card shadow p-3">
+          <h5 className="fw-bold mb-3">Order Record</h5>
           <div className="table-responsive">
             <table className="table table-bordered align-middle">
               <thead className="table-light">

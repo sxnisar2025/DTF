@@ -14,6 +14,9 @@ export default function Customers() {
   const [showModal, setShowModal] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
   const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState(""); // "" means no filter
+
+  
 
   const [form, setForm] = useState({
     dateTime: "",
@@ -24,12 +27,40 @@ export default function Customers() {
     orderType: "Local"
   });
 
+  
   // ================= LOAD CUSTOMERS =================
 
-  useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("customers")) || [];
-    setCustomers(stored);
-  }, []);
+useEffect(() => {
+  // Load saved customers
+  const storedCustomers = JSON.parse(localStorage.getItem("customers")) || [];
+
+  // Load orders
+  const orders = JSON.parse(localStorage.getItem("orders")) || [];
+
+  // Extract unique customers from orders
+  const orderCustomers = orders.map(o => ({
+    userName: o.userName,
+    phone: o.phone,
+    dateTime: o.dateTime,
+    city: "",
+    address: "",
+    orderType: "Local"
+  }));
+
+  // Merge with stored customers without duplicates
+  const merged = [...storedCustomers];
+
+  orderCustomers.forEach(oc => {
+    if (!merged.some(c => c.phone === oc.phone)) {
+      merged.push(oc);
+    }
+  });
+
+  setCustomers(merged);
+  localStorage.setItem("customers", JSON.stringify(merged));
+}, []);
+
+
 
   // ================= PHONE VALIDATION =================
 
@@ -38,11 +69,13 @@ export default function Customers() {
   // ================= SEARCH =================
 
   const filteredCustomers = useMemo(() => {
-    return customers.filter(c =>
-      c.userName.toLowerCase().includes(search.toLowerCase()) ||
-      c.phone.includes(search)
-    );
-  }, [customers, search]);
+  return customers.filter(c => 
+    (c.userName.toLowerCase().includes(search.toLowerCase()) || 
+     c.phone.includes(search)) &&
+    (typeFilter ? c.orderType === typeFilter : true) // filter by type if selected
+  );
+}, [customers, search, typeFilter]);
+
 
   // ================= SUMMARY =================
 
@@ -236,12 +269,29 @@ export default function Customers() {
 
           {/* ===== SEARCH ===== */}
 
-          <input
-            className="form-control mb-3"
-            placeholder="Search by Name or Phone"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <div className="row mb-3 g-2">
+  <div className="col-md-6">
+    <input
+      className="form-control"
+      placeholder="Search by Name or Phone"
+      value={search}
+      onChange={e => setSearch(e.target.value)}
+    />
+  </div>
+
+  <div className="col-md-3">
+    <select 
+      className="form-select"
+      value={typeFilter}
+      onChange={e => setTypeFilter(e.target.value)}
+    >
+      <option value="">All Types</option>
+      <option value="Local">Local</option>
+      <option value="Online">Online</option>
+    </select>
+  </div>
+</div>
+
 
           {/* ===== TABLE ===== */}
 

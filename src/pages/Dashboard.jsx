@@ -17,57 +17,67 @@ import {
 
 export default function Dashboard() {
 
-  const [type, setType] = useState("record");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [month, setMonth] = useState("");
 
-  const data = useMemo(() => JSON.parse(localStorage.getItem("records")) || [], []);
+  const data = useMemo(
+    () => JSON.parse(localStorage.getItem("records")) || [],
+    []
+  );
 
+  /* ================= FILTER DATA ================= */
   const filteredData = useMemo(() => {
-
     return data.filter((item) => {
       const rowDate = new Date(item.date);
+
       let dateMatch = true;
       if (fromDate) dateMatch = rowDate >= new Date(fromDate);
       if (toDate) dateMatch = dateMatch && rowDate <= new Date(toDate);
+
       let monthMatch = true;
       if (month) monthMatch = rowDate.getMonth() + 1 === Number(month);
+
       return dateMatch && monthMatch;
     });
-
   }, [data, fromDate, toDate, month]);
 
+  /* ================= TOTALS ================= */
   const totals = useMemo(() => {
+    return filteredData.reduce(
+      (acc, item) => {
+        const size = Number(item.size || 0);
+        const cash = Number(item.cash || 0);
+        const transfer = Number(item.transfer || 0);
+        const balance = Number(item.balance || 0);
+        const amount = Number(item.amount || 0);
+        const cost = Number(item.total || 0);
 
-    return filteredData.reduce((acc, item) => {
-      const size = Number(item.size || 0);
-      const cash = Number(item.cash || 0);
-      const transfer = Number(item.transfer || 0);
-      const balance = Number(item.balance || 0);
-      const amount = Number(item.amount || 0);
-      const cost = Number(item.total || 0);
+        acc.orders += 1;
+        acc.items += size;
+        acc.cash += cash;
+        acc.transfer += transfer;
+        acc.balance += balance;
+        acc.amount += amount;
+        acc.payments += cash + transfer;
+        acc.profit += amount - cost * 200;
 
-      acc.size += size;
-      acc.cash += cash;
-      acc.transfer += transfer;
-      acc.balance += balance;
-      acc.amount += amount;
-      acc.profit += amount - cost * 200;
-
-      return acc;
-    }, {
-      size: 0,
-      cash: 0,
-      transfer: 0,
-      balance: 0,
-      amount: 0,
-      profit: 0
-    });
-
+        return acc;
+      },
+      {
+        orders: 0,
+        items: 0,
+        cash: 0,
+        transfer: 0,
+        balance: 0,
+        amount: 0,
+        payments: 0,
+        profit: 0
+      }
+    );
   }, [filteredData]);
 
-  // Weekly Graph (last 4 weeks)
+  /* ================= WEEKLY GRAPH ================= */
   const weeklyGraph = useMemo(() => {
     const map = {};
     filteredData.forEach((r) => {
@@ -80,7 +90,7 @@ export default function Dashboard() {
     return Object.values(map).slice(-4);
   }, [filteredData]);
 
-  // Monthly Amount
+  /* ================= MONTHLY AMOUNT ================= */
   const monthlyAmount = useMemo(() => {
     const map = {};
     filteredData.forEach((r) => {
@@ -91,7 +101,7 @@ export default function Dashboard() {
     return Object.values(map);
   }, [filteredData]);
 
-  // Monthly Material Size
+  /* ================= MONTHLY SIZE ================= */
   const monthlySize = useMemo(() => {
     const map = {};
     filteredData.forEach((r) => {
@@ -104,8 +114,14 @@ export default function Dashboard() {
 
   const printDashboard = () => window.print();
 
-  // Colors for bars
-  const barColors = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40"];
+  const barColors = [
+    "#FF6384",
+    "#36A2EB",
+    "#FFCE56",
+    "#4BC0C0",
+    "#9966FF",
+    "#FF9F40"
+  ];
 
   return (
     <div className="d-flex flex-column min-vh-100 bg-light">
@@ -114,33 +130,42 @@ export default function Dashboard() {
 
       <main className="flex-fill container-fluid p-4">
 
-        {/* FILTER BAR */}
+        {/* ================= FILTER BAR ================= */}
         <div className="card p-4 shadow mb-4">
           <div className="row g-3 align-items-center">
 
             <div className="col-md-2 fw-bold fs-5">Dashboard</div>
 
             <div className="col-md">
-              <select value={type} onChange={e => setType(e.target.value)} className="form-select">
-                <option value="record">Local Order</option>
-                <option value="all">All Payment</option>
-              </select>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="form-control"
+              />
             </div>
 
             <div className="col-md">
-              <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} className="form-control" />
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="form-control"
+              />
             </div>
 
             <div className="col-md">
-              <input type="date" value={toDate} onChange={e => setToDate(e.target.value)} className="form-control" />
-            </div>
-
-            <div className="col-md">
-              <select value={month} onChange={e => setMonth(e.target.value)} className="form-select">
+              <select
+                value={month}
+                onChange={(e) => setMonth(e.target.value)}
+                className="form-select"
+              >
                 <option value="">All Months</option>
                 {[...Array(12)].map((_, i) => (
                   <option key={i} value={i + 1}>
-                    {new Date(0, i).toLocaleString("default", { month: "long" })}
+                    {new Date(0, i).toLocaleString("default", {
+                      month: "long"
+                    })}
                   </option>
                 ))}
               </select>
@@ -149,33 +174,44 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* SUMMARY CARDS */}
+        {/* ================= SUMMARY CARDS ================= */}
         <div className="row g-3 mb-4">
-          <Card title="Size" value={totals.size} />
+
+          {/* NEW CARDS */}
+          <Card title="Total Orders" value={totals.orders} />
+          <Card title="Total Payments" value={totals.payments} />
+          <Card title="Total Balance" value={totals.balance} />
+          <Card title="Total Item (Meter)" value={totals.items} />
+
+          {/* EXISTING CARDS */}
+          {/* <Card title="Size" value={totals.items} />
           <Card title="Cash" value={totals.cash} />
           <Card title="Transfer" value={totals.transfer} />
           <Card title="Balance" value={totals.balance} />
           <Card title="Amount" value={totals.amount} />
-          <Card title="Profit" value={totals.profit} />
+          <Card title="Profit" value={totals.profit} /> */}
+
         </div>
 
-        {/* CHARTS */}
+        {/* ================= CHARTS ================= */}
         <div className="row g-4 mb-4">
 
           <div className="col-md-6">
             <ChartBox title="Payment Summary">
-              <BarChart data={[
-                { name: "Cash", value: totals.cash },
-                { name: "Transfer", value: totals.transfer },
-                { name: "Balance", value: totals.balance }
-              ]}>
+              <BarChart
+                data={[
+                  { name: "Cash", value: totals.cash },
+                  { name: "Transfer", value: totals.transfer },
+                  { name: "Balance", value: totals.balance }
+                ]}
+              >
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
                 <CartesianGrid strokeDasharray="3 3" />
                 <Bar dataKey="value">
-                  {[totals.cash, totals.transfer, totals.balance].map((_, idx) => (
-                    <Cell key={idx} fill={barColors[idx % barColors.length]} />
+                  {[0, 1, 2].map((i) => (
+                    <Cell key={i} fill={barColors[i]} />
                   ))}
                 </Bar>
               </BarChart>
@@ -191,7 +227,10 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <Bar dataKey="amount">
                   {weeklyGraph.map((_, idx) => (
-                    <Cell key={idx} fill={barColors[idx % barColors.length]} />
+                    <Cell
+                      key={idx}
+                      fill={barColors[idx % barColors.length]}
+                    />
                   ))}
                 </Bar>
               </BarChart>
@@ -209,7 +248,11 @@ export default function Dashboard() {
                 <YAxis />
                 <Tooltip />
                 <CartesianGrid strokeDasharray="3 3" />
-                <Line dataKey="amount" stroke="#36A2EB" strokeWidth={3} />
+                <Line
+                  dataKey="amount"
+                  stroke="#36A2EB"
+                  strokeWidth={3}
+                />
               </LineChart>
             </ChartBox>
           </div>
@@ -223,7 +266,10 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <Bar dataKey="size">
                   {monthlySize.map((_, idx) => (
-                    <Cell key={idx} fill={barColors[idx % barColors.length]} />
+                    <Cell
+                      key={idx}
+                      fill={barColors[idx % barColors.length]}
+                    />
                   ))}
                 </Bar>
               </BarChart>
@@ -233,7 +279,9 @@ export default function Dashboard() {
         </div>
 
         <div className="d-flex justify-content-end mt-4">
-          <button onClick={printDashboard} className="btn btn-dark">Print Dashboard</button>
+          <button onClick={printDashboard} className="btn btn-dark">
+            Print Dashboard
+          </button>
         </div>
 
       </main>
@@ -244,7 +292,8 @@ export default function Dashboard() {
   );
 }
 
-/* COMPONENTS */
+/* ================= COMPONENTS ================= */
+
 function Card({ title, value }) {
   return (
     <div className="col-6 col-md-4 col-lg-2">
@@ -260,7 +309,9 @@ function ChartBox({ title, children }) {
   return (
     <div className="card p-4 shadow h-100">
       <h6 className="fw-semibold mb-3">{title}</h6>
-      <ResponsiveContainer width="100%" height={300}>{children}</ResponsiveContainer>
+      <ResponsiveContainer width="100%" height={300}>
+        {children}
+      </ResponsiveContainer>
     </div>
   );
 }

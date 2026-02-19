@@ -5,6 +5,9 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import OrderModal from "../components/OrderModal";
+import OrderSummary from "../components/OrderSummary";
+import OrderFilters from "../components/OrderFilters";
 
 export default function Order() {
   const [orders, setOrders] = useState([]);
@@ -216,39 +219,13 @@ export default function Order() {
       <Header />
       <main className="container-fluid p-4 flex-fill">
         {/* SUMMARY */}
-        <div className="row g-3 mb-4 text-center">
-          <div className="col">
-            <div className="card bg-primary text-white p-3">
-              Created Orders
-              <h5>{createdOrders}</h5>
-            </div>
-          </div>
-          <div className="col">
-            <div className="card bg-warning text-dark p-3">
-              InProgress Orders
-              <h5>{inProgressOrders}</h5>
-            </div>
-          </div>
-          <div className="col">
-            <div className="card bg-success text-white p-3">
-              Completed Orders
-              <h5>{completedOrders}</h5>
-            </div>
-          </div>
-          <div className="col">
-            <div className="card bg-info text-white p-3">
-              Total Size (M)
-              <h5>{totalItemSize}</h5>
-            </div>
-          </div>
-          <div className="col">
-            <div className="card bg-dark text-white p-3">
-              Total Cost
-              <h5>{totalItemCost}</h5>
-            </div>
-          </div>
-        </div>
-
+        <OrderSummary
+          createdOrders={createdOrders}
+          inProgressOrders={inProgressOrders}
+          completedOrders={completedOrders}
+          totalItemSize={totalItemSize}
+          totalItemCost={totalItemCost}
+        />
         {/* HEADER */}
         <div className="d-flex justify-content-between mb-3">
           <h4 className="fw-bold">Order Management</h4>
@@ -258,27 +235,16 @@ export default function Order() {
             <button onClick={() => setShowModal(true)} className="btn btn-success">+ Create Order</button>
           </div>
         </div>
+        <addRecord></addRecord>
 
         {/* FILTERS */}
-        <div className="row g-2 mb-3">
-          <div className="col-md">
-            <input className="form-control" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
-          <div className="col-md">
-            <select className="form-select" onChange={e => setStatusFilter(e.target.value)}>
-              <option value="">All Status</option>
-              <option value="Pending">Pending</option>
-              <option value="InProgress">InProgress</option>
-              <option value="Completed">Completed</option>
-            </select>
-          </div>
-          <div className="col-md">
-            <input type="month" className="form-control" onChange={e => setMonthFilter(e.target.value.split("-")[1])} />
-          </div>
-          <div className="col-md">
-            <input type="date" className="form-control" onChange={e => setDateFilter(e.target.value)} />
-          </div>
-        </div>
+      <OrderFilters
+  search={search}
+  setSearch={setSearch}
+  setStatusFilter={setStatusFilter}
+  setMonthFilter={setMonthFilter}
+  setDateFilter={setDateFilter}
+/>
 
         {/* TABLE */}
         <div className="card shadow p-3">
@@ -313,7 +279,7 @@ export default function Order() {
                     <td>{o.itemRate}</td>
                     <td>{o.totalCost}</td>
                     <td>
-                       <td><span className={`badge ${o.status==="Completed"?"bg-success":o.status==="Pending"?"bg-secondary text-white":"bg-warning text-dark"}`}>{o.status}</span></td>
+                      <td><span className={`badge ${o.status === "Completed" ? "bg-success" : o.status === "Pending" ? "bg-secondary text-white" : "bg-warning text-dark"}`}>{o.status}</span></td>
                     </td>
                     <td>
                       <div className="d-flex gap-2">
@@ -332,52 +298,15 @@ export default function Order() {
       <Footer />
 
       {/* MODAL */}
-      {showModal && (
-        <div className="modal d-block bg-dark bg-opacity-50">
-          <div className="modal-dialog modal-lg modal-dialog-centered">
-            <div className="modal-content">
-              <form onSubmit={handleSave}>
-                <div className="modal-header">
-                  <h5>{editIndex !== null ? "Edit Order" : "Create Order"}</h5>
-                  <button type="button" className="btn-close" onClick={() => { setShowModal(false); setEditIndex(null); }}></button>
-                </div>
-                <div className="modal-body">
-                  <div className="row g-3">
-                    <div className="col-md-6">
-                      <label>User Name *</label>
-                      <input className="form-control" name="userName" value={form.userName} onChange={handleChange} required />
-                    </div>
-                    <div className="col-md-6">
-                      <label>Phone *</label>
-                      <input className="form-control" name="phone" value={form.phone} onChange={handleChange} required />
-                    </div>
-                    <div className="col-md-6">
-                      <label>Item Size *</label>
-                      <input type="number" className="form-control" name="itemSize" value={form.itemSize} onChange={handleChange} required />
-                    </div>
-                    <div className="col-md-6">
-                      <label>Item Rate *</label>
-                      <input type="number" className="form-control" name="itemRate" value={form.itemRate} onChange={handleChange} required />
-                    </div>
-                    <div className="col-md-6">
-                      <label>Description</label>
-                      <input className="form-control" name="Description" value={form.Description} onChange={handleChange} />
-                    </div>
-                    <div className="col-md-6">
-                      <label>Total Cost</label>
-                      <input className="form-control" value={form.totalCost} readOnly style={{ backgroundColor: "#f5f5f5" }} />
-                    </div>
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={() => { setShowModal(false); setEditIndex(null); }}>Cancel</button>
-                  <button type="submit" className="btn btn-dark">{editIndex !== null ? "Update" : "Create"}</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      <OrderModal
+        showModal={showModal}
+        setShowModal={setShowModal}
+        form={form}
+        handleChange={handleChange}
+        handleSave={handleSave}
+        editIndex={editIndex}
+        setEditIndex={setEditIndex}
+      />
 
     </div>
   );

@@ -4,6 +4,11 @@ import Footer from "../components/Footer";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import PaymentSummary from "../components/PaymentSummary";
+import PaymentModal from "../components/PaymentModal";
+import PaymentFilters from "../components/PaymentFilters"
+import PaymentHistoryModal from "../components/PaymentHistoryModal";
+
 
 export default function Payment() {
   const [orders, setOrders] = useState([]);
@@ -178,38 +183,28 @@ export default function Payment() {
         </div>
 
         {/* SUMMARY */}
-        <div className="row g-3 mb-4 text-center">
-          <div className="col"><div className="card bg-primary text-white p-3">Total Cost<h5>{totalCost}</h5></div></div>
-          <div className="col"><div className="card bg-success text-white p-3">Total Cash<h5>{totalCash}</h5></div></div>
-          <div className="col"><div className="card bg-info text-white p-3">Total Transfer<h5>{totalTransfer}</h5></div></div>
-          <div className="col"><div className="card bg-warning text-dark p-3">Total Balance<h5>{totalBalance}</h5></div></div>
-          <div className="col"><div className="card bg-dark text-white p-3">Total Amount<h5>{totalAmount}</h5></div></div>
-        </div>
+      <PaymentSummary
+  totalCost={totalCost}
+  totalCash={totalCash}
+  totalTransfer={totalTransfer}
+  totalBalance={totalBalance}
+  totalAmount={totalAmount}
+/>
 
         {/* SEARCH & FILTER */}
-        <div className="row g-2 mb-3">
-          <div className="col-md-3">
-            <input className="form-control" placeholder="Search by Name / Phone / ID" value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
-          <div className="col-md-2">
-            <select className="form-select" value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
-              <option value="">All Types</option>
-              <option value="Cash">Cash</option>
-              <option value="Transfer">Transfer</option>
-              <option value="Balance">Balance</option>
-            </select>
-          </div>
-          <div className="col-md-2">
-            <select className="form-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-              <option value="">All Status</option>
-              <option value="Pending">Pending</option>
-              <option value="InProgress">InProgress</option>
-              <option value="Completed">Completed</option>
-            </select>
-          </div>
-          <div className="col-md-2"><input type="month" className="form-control" value={monthFilter} onChange={e => setMonthFilter(e.target.value)} /></div>
-          <div className="col-md-2"><input type="date" className="form-control" value={dateFilter} onChange={e => setDateFilter(e.target.value)} /></div>
-        </div>
+     <PaymentFilters
+  search={search}
+  setSearch={setSearch}
+  typeFilter={typeFilter}
+  setTypeFilter={setTypeFilter}
+  statusFilter={statusFilter}
+  setStatusFilter={setStatusFilter}
+  monthFilter={monthFilter}
+  setMonthFilter={setMonthFilter}
+  dateFilter={dateFilter}
+  setDateFilter={setDateFilter}
+/>
+
 
         {/* TABLE */}
         <div className="card shadow p-3">
@@ -250,72 +245,29 @@ export default function Payment() {
       <Footer />
 
       {/* ================= MODAL ================= */}
-      {showModal && selectedOrder && (
-        <div className="modal d-block bg-dark bg-opacity-50">
-          <div className="modal-dialog modal-lg modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5>Add Payment — {selectedOrder.id}</h5>
-                <button className="btn-close" onClick={resetModal}></button>
-              </div>
-              <div className="modal-body">
-                <div className="row mb-3">
-                  <div className="col-md-6"><b>User :</b> {selectedOrder.userName}</div>
-                  <div className="col-md-6"><b>Phone :</b> {selectedOrder.phone}</div>
-                </div>
-                <hr />
-                <div className="row g-3">
-                  <div className="col-md-6">
-                    <label>Select Payment Method</label>
-                    <select className="form-select" value={paymentMethod} onChange={e=>{setPaymentMethod(e.target.value); setCash(""); setTransfer(""); setFile(null);}}>
-                      <option value="">Select</option><option value="Cash">Cash</option><option value="Transfer">Transfer</option>
-                    </select>
-                  </div>
-                  {paymentMethod==="Cash" && <div className="col-md-6"><label>Cash Amount</label><input className="form-control" placeholder="Enter cash" value={cash} onChange={e=>setCash(e.target.value.replace(/[^0-9]/g,""))} /></div>}
-                  {paymentMethod==="Transfer" && <>
-                    <div className="col-md-6"><label>Transfer Amount</label><input className="form-control" placeholder="Enter transfer" value={transfer} onChange={e=>setTransfer(e.target.value.replace(/[^0-9]/g,""))} /></div>
-                    <div className="col-md-6"><label>Attach Receipt</label><input type="file" className="form-control" onChange={e=>setFile(e.target.files[0])} /></div>
-                  </>}
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={resetModal}>Cancel</button>
-                <button className="btn btn-dark" onClick={handleSavePayment}>Submit</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <PaymentModal
+  showModal={showModal}
+  selectedOrder={selectedOrder}
+  paymentMethod={paymentMethod}
+  setPaymentMethod={setPaymentMethod}
+  cash={cash}
+  setCash={setCash}
+  transfer={transfer}
+  setTransfer={setTransfer}
+  setFile={setFile}
+  resetModal={resetModal}
+  handleSavePayment={handleSavePayment}
+/>
 
       {/* ================= History Modal ================= */}
-      {showHistoryModal && historyOrder && (
-        <div className="modal d-block bg-dark bg-opacity-50">
-          <div className="modal-dialog modal-lg modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5>Payment History — {historyOrder.id}</h5>
-                <button className="btn-close" onClick={()=>setShowHistoryModal(false)} />
-              </div>
-              <div className="modal-body">
-                <table className="table table-bordered">
-                  <thead className="table-light">
-                    <tr><th>#</th><th>Date</th><th>Cash</th><th>Transfer</th><th>File</th></tr>
-                  </thead>
-                  <tbody>
-                    {payments.filter(p=>p.orderId===historyOrder.id).map((p,i)=>(
-                      <tr key={i}><td>{i+1}</td><td>{p.date}</td><td>{p.cash}</td><td>{p.transfer}</td><td>{p.file}</td></tr>
-                    ))}
-                  </tbody>
-                  <tfoot className="table-light fw-bold">
-                    <tr><td colSpan="2">Total Paid</td><td colSpan="3">{historyOrder.amount}</td></tr>
-                    <tr><td colSpan="2">Remaining Balance</td><td colSpan="3">{historyOrder.balance}</td></tr>
-                  </tfoot>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+   
+
+<PaymentHistoryModal
+  showHistoryModal={showHistoryModal}
+  historyOrder={historyOrder}
+  payments={payments}
+  setShowHistoryModal={setShowHistoryModal}
+/>
 
     </div>
   );

@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
+import CashflowSummary from "../components/CashflowSummary";
+import CashflowForm from "../components/CashflowForm";
 
 export default function Cashflow() {
 
@@ -176,68 +178,23 @@ export default function Cashflow() {
 
           {/* SUMMARY */}
 
-          <div className="row g-3 mb-4 text-center">
-
-            <div className="col-md">
-              <div className="card bg-primary text-white p-3">
-                Total Cash Received
-                <h5>{totalCashReceived}</h5>
-              </div>
-            </div>
-
-            <div className="col-md">
-              <div className="card bg-success text-white p-3">
-                Total Submitted
-                <h5>{totalSubmitted}</h5>
-              </div>
-            </div>
-
-            <div className="col-md">
-              <div className="card bg-warning text-dark p-3">
-                Balance In Hand
-                <h5>{balanceInHand}</h5>
-              </div>
-            </div>
-
-          </div>
+      <CashflowSummary
+  totalCashReceived={totalCashReceived}
+  totalSubmitted={totalSubmitted}
+  balanceInHand={balanceInHand}
+/>
 
           {/* ADMIN FORM */}
 
-          {user?.role === "admin" && (
-
-            <div className="row g-2 mb-4">
-
-              <div className="col-md">
-                <input
-                  type="number"
-                  className="form-control"
-                  placeholder="Submit Amount"
-                  value={submitAmount}
-                  onChange={e => setSubmitAmount(e.target.value)}
-                />
-              </div>
-
-              <div className="col-md">
-                <input
-                  className="form-control"
-                  placeholder="Note"
-                  value={note}
-                  onChange={e => setNote(e.target.value)}
-                />
-              </div>
-
-              <div className="col-md-auto">
-                <button
-                  onClick={handleSubmit}
-                  className="btn btn-dark w-100"
-                >
-                  {editId ? "Update" : "Submit Cash"}
-                </button>
-              </div>
-
-            </div>
-
-          )}
+         <CashflowForm
+  user={user}
+  submitAmount={submitAmount}
+  setSubmitAmount={setSubmitAmount}
+  note={note}
+  setNote={setNote}
+  handleSubmit={handleSubmit}
+  editId={editId}
+/>
 
           {/* TABLE */}
 

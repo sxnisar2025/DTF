@@ -1,10 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import CustomerModal from "../components/CustomerModal";
+import CustomerSummary from "../components/CustomerSummary";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+
 
 export default function Customers() {
 
@@ -195,26 +198,11 @@ export default function Customers() {
         <div className="card shadow p-4">
 
           {/* SUMMARY */}
-          <div className="row g-3 text-center mb-4">
-            <div className="col-md">
-              <div className="card bg-primary text-white p-3">
-                Total Users
-                <h4>{totalUsers}</h4>
-              </div>
-            </div>
-            <div className="col-md">
-              <div className="card bg-success text-white p-3">
-                Local Users
-                <h4>{localUsers}</h4>
-              </div>
-            </div>
-            <div className="col-md">
-              <div className="card bg-warning text-dark p-3">
-                Online Users
-                <h4>{onlineUsers}</h4>
-              </div>
-            </div>
-          </div>
+          <CustomerSummary
+  total={totalUsers}
+  local={localUsers}
+  online={onlineUsers}
+/>
 
           {/* HEADER */}
           <div className="d-flex justify-content-between mb-3">
@@ -298,53 +286,16 @@ export default function Customers() {
       <Footer />
 
       {/* MODAL */}
-      {showModal && (
-        <div className="modal d-block bg-dark bg-opacity-50">
-          <div className="modal-dialog modal-lg modal-dialog-centered">
-            <div className="modal-content">
-              <form onSubmit={handleSave}>
-                <div className="modal-header">
-                  <h5>{editIndex !== null ? "Edit User" : "Create User"}</h5>
-                  <button type="button" className="btn-close" onClick={() => { setShowModal(false); setEditIndex(null); }} />
-                </div>
-
-                <div className="modal-body">
-                  <div className="row g-3">
-                    <div className="col-md-6">
-                      <label>User Name *</label>
-                      <input className="form-control" name="userName" value={form.userName} onChange={handleChange} required />
-                    </div>
-                    <div className="col-md-6">
-                      <label>Phone *</label>
-                      <input className="form-control" value={form.phone} onChange={handlePhoneChange} disabled={editIndex !== null} required />
-                    </div>
-                    <div className="col-md-6">
-                      <label>City</label>
-                      <input className="form-control" name="city" value={form.city} onChange={handleChange} />
-                    </div>
-                    <div className="col-md-6">
-                      <label>Address</label>
-                      <input className="form-control" name="address" value={form.address} onChange={handleChange} />
-                    </div>
-                    <div className="col-md-6">
-                      <label>Order Type</label>
-                      <select className="form-select" name="orderType" value={form.orderType} onChange={handleChange}>
-                        <option>Local</option>
-                        <option>Online</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-dark">{editIndex !== null ? "Update" : "Create"}</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+          <CustomerModal
+  showModal={showModal}
+  setShowModal={setShowModal}
+  form={form}
+  handleChange={handleChange}
+  handlePhoneChange={handlePhoneChange}
+  handleSave={handleSave}
+  editIndex={editIndex}
+  setEditIndex={setEditIndex}
+/>
 
     </div>
   );
